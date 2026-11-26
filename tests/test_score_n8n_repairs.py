@@ -12,7 +12,7 @@ def test_parse_json_object_accepts_plain_json_and_fences():
     expected = {"category": "credentials", "patch": []}
     assert parse_json_object(json.dumps(expected)) == expected
     fence = chr(96) * 3
-    assert parse_json_object("Here is the result:\\n" + fence + "json\\n" + json.dumps(expected) + "\\n" + fence) == expected
+    assert parse_json_object("Here is the result:\n" + fence + "json\n" + json.dumps(expected) + "\n" + fence) == expected
     assert parse_json_object("not json") is None
 
 
