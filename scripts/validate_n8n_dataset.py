@@ -85,7 +85,25 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
             if category=="execution_api" and code in {"UPSTREAM_SERVICE_UNAVAILABLE","DNS_OR_CONNECTION_FAILURE"}:
                 if answer["patch"]!=[] or answer["needs_human_review"] is not True: errors.append(f"{case}: outage/network must abstain")
             if category=="item_linking" and code=="ITEM_LINEAGE_UNAVAILABLE":
-                if answer["patch"]!=[] or answer["needs_human_review"] is not True: errors.append(f"{case}: missing lineage must abstain")
+                evidence = " ".join([
+                    str(prompt.get("execution_error", "")),
+                    str(prompt.get("expected_behavior", "")),
+                    str(prompt.get("evidence_note", "")),
+                ]).lower()
+                singleton_proven = any(
+                    phrase in evidence for phrase in (
+                        "exactly one item", "single result", "returns one item", "only one item"
+                    )
+                )
+                if singleton_proven:
+                    safe_first = any(
+                        ".first()" in str(operation.get("value", ""))
+                        for operation in answer["patch"]
+                    )
+                    if not answer["patch"] or answer["needs_human_review"] is True or not safe_first:
+                        errors.append(f"{case}: proven singleton lineage needs a minimal .first() patch")
+                elif answer["patch"] != [] or answer["needs_human_review"] is not True:
+                    errors.append(f"{case}: unresolved item lineage must abstain without a patch")
             if answer["patch"]:
                 try:
                     updated=apply_patch(prompt["workflow"],answer["patch"])
