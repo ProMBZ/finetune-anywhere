@@ -18,7 +18,7 @@ There are 48 canonical diagnosis codes: six in each of eight categories. Exact v
 - Training retains 197 reviewed v0.2 training examples and 50 former validation examples after diagnosis-label normalization, plus 393 new or replacement synthetic scenarios.
 - Validation contains 128 new cases.
 - Evaluation contains 192 new cases, 24 per category and four per diagnosis code.
-- The previous 50-case evaluation set is archived unchanged in archive/eval-v0.2.jsonl. It is not used for v0.3 training or evaluation.
+- The previous 50-case evaluation set is archived unchanged in archive/eval-v0.2.jsonl. It is not used for v0.3 training or evaluation. The new v0.3 evaluation scenarios use templates separate from the retained training examples.
 
 ## Coverage and provenance
 
@@ -34,7 +34,7 @@ The Colab notebook retrieves official n8n documentation for train, validation an
 - Patch applicability checks JSON Patch application and workflow graph structure; it does not execute a live n8n workflow.
 - Gold-patch match is strict and may penalize alternative valid patches.
 - 100% scores on this benchmark are not a guarantee of production reliability.
-- External outages, credential problems and ambiguous item lineage require human review.
+- External outages and credential problems require human review. Missing item lineage can use `.first()` only when a single upstream item is explicitly guaranteed; otherwise it requires review.
 
 ## Safety
 
