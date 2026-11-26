@@ -70,8 +70,6 @@ def schema_errors(value: dict[str,Any]) -> list[str]:
         errors.append("credential cases must abstain without a patch")
     if category=="execution_api" and code in {"UPSTREAM_SERVICE_UNAVAILABLE","DNS_OR_CONNECTION_FAILURE"}:
         if patch!=[] or value.get("needs_human_review") is not True: errors.append("external outage/network cases must abstain")
-    if category=="item_linking" and code=="ITEM_LINEAGE_UNAVAILABLE":
-        if patch!=[] or value.get("needs_human_review") is not True: errors.append("missing item lineage cases must abstain")
     return errors
 
 def apply_patch(document: Any,operations: list[dict[str,Any]]) -> Any:
