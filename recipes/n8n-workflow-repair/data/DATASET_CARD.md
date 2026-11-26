@@ -34,7 +34,7 @@ The original 10 held-out examples are retained and 40 new cases are added. Evalu
 - A gold-patch match is strict and can penalize a different valid repair.
 - Patch applicability is a structural JSON fixture check, not a live n8n execution test.
 - A 1.7B adapter is not a substitute for current node documentation, execution data, or human review.
-- Current documentation sources are listed in ../knowledge/sources.yaml; a complete runtime retrieval index is not included in this dataset.
+- The Colab run builds a runtime BM25 index from official docs listed in ../knowledge/sources.yaml. Retrieved context is used during base/fine-tuned evaluation, not included as fine-tuning examples.
 
 ## Safety
 Credential and secret cases abstain. The model must never invent, reveal, or modify secret values. Do not automatically apply model-generated patches to a production workflow.
