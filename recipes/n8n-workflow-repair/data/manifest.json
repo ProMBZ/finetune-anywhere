@@ -59,9 +59,9 @@
     }
   },
   "design": {
-    "training": "640 examples balanced to 80 per category. This split contains 197 retained v0.2 training examples, 50 former v0.2 validation examples after diagnosis-label normalization, and 393 new or replacement synthetic cases.",
-    "validation": "128 newly authored cases, 16 per category. Scenario templates are separately authored from the retained training examples.",
-    "evaluation": "192 newly authored held-out cases, 24 per category and four per canonical diagnosis code. Scenario templates differ from the retained v0.2 training cases and the newly authored training templates; keep untouched and do not use for tuning.",
+    "training": "640 examples balanced to 80 per category. This split contains 197 reviewed v0.2 training examples, 50 former v0.2 validation examples after diagnosis-label normalization, and 393 new or replacement synthetic cases.",
+    "validation": "128 newly authored prompts, 16 per category, with unique IDs and input payloads. Some underlying repair patterns recur across splits as required to measure the same fixed diagnosis taxonomy.",
+    "evaluation": "192 newly authored held-out prompts, 24 per category and four per canonical diagnosis code. The prompts have unique case IDs, input data and execution descriptions and are excluded from training. Some underlying repair patterns recur because the diagnosis taxonomy is finite; this remains a synthetic controlled benchmark.",
     "diagnosis_codes": "48 canonical labels, six per category. The Colab pipeline adds concise definitions for all codes to the shared system instruction at runtime, identically across training, validation and evaluation.",
     "retrieval": "The same official-document BM25 retrieval and augmentation policy is used for training, validation and evaluation. The same runtime system instruction includes concise canonical-code definitions.",
     "safety": "Credentials and secrets always abstain. External outages and ambiguous item lineage abstain unless supplied evidence supports a safe, minimal correction.",
