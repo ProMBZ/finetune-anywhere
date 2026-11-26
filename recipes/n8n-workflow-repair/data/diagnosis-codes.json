@@ -3,212 +3,212 @@
   "policy": "Use exactly one canonical diagnosis code from the predicted category. Codes name the primary root cause, not a downstream symptom. Do not invent aliases.",
   "categories": {
     "expression": [
-      [
-        "EXPRESSION_PREFIX_MISSING",
-        "Expression-like text lacks the leading equals sign required to evaluate it."
-      ],
-      [
-        "NODE_REFERENCE_INVALID",
-        "Expression refers to a node name that does not exist in the supplied workflow."
-      ],
-      [
-        "PROPERTY_PATH_INVALID",
-        "Expression reads a property path that does not match the supplied JSON input."
-      ],
-      [
-        "EXPRESSION_METHOD_INVALID",
-        "Expression calls a method unavailable for the receiver or uses incorrect method casing."
-      ],
-      [
-        "EXPRESSION_SYNTAX_INVALID",
-        "Expression has invalid syntax, such as a missing operand or delimiter."
-      ],
-      [
-        "EXPRESSION_DATE_FORMAT_INVALID",
-        "Native Date methods are confused with n8n's Luxon DateTime expression API."
-      ]
+      {
+        "code": "EXPRESSION_PREFIX_MISSING",
+        "definition": "Expression-like text lacks the leading equals sign required to evaluate it."
+      },
+      {
+        "code": "NODE_REFERENCE_INVALID",
+        "definition": "Expression refers to a node name that does not exist in the supplied workflow."
+      },
+      {
+        "code": "PROPERTY_PATH_INVALID",
+        "definition": "Expression reads a property path that does not match the supplied JSON input."
+      },
+      {
+        "code": "EXPRESSION_METHOD_INVALID",
+        "definition": "Expression calls a method unavailable for the receiver or uses incorrect method casing."
+      },
+      {
+        "code": "EXPRESSION_SYNTAX_INVALID",
+        "definition": "Expression has invalid syntax, such as a missing operand or delimiter."
+      },
+      {
+        "code": "EXPRESSION_DATE_FORMAT_INVALID",
+        "definition": "Native Date methods are confused with n8n's Luxon DateTime expression API."
+      }
     ],
     "data_mapping": [
-      [
-        "FIELD_MISSING_OR_NULL",
-        "Required property can be absent or null and needs an evidence-supported fallback."
-      ],
-      [
-        "ARRAY_INDEX_INCORRECT",
-        "Selected array index does not correspond to the requested item."
-      ],
-      [
-        "TYPE_COERCION_REQUIRED",
-        "Supplied value type differs from the explicit downstream or API type requirement."
-      ],
-      [
-        "DEFAULT_OPERATOR_LOSES_FALSY_VALUE",
-        "Logical OR replaces valid falsy values such as zero; nullish coalescing is required."
-      ],
-      [
-        "BOOLEAN_STRING_COERCION",
-        "Text such as false is treated as truthy rather than parsed explicitly."
-      ],
-      [
-        "NESTED_FIELD_PATH_MISMATCH",
-        "Mapping path does not match the nested structure in the supplied JSON."
-      ]
+      {
+        "code": "FIELD_MISSING_OR_NULL",
+        "definition": "Required property can be absent or null and needs an evidence-supported fallback."
+      },
+      {
+        "code": "ARRAY_INDEX_INCORRECT",
+        "definition": "Selected array index does not correspond to the requested item."
+      },
+      {
+        "code": "TYPE_COERCION_REQUIRED",
+        "definition": "Supplied value type differs from the explicit downstream or API type requirement."
+      },
+      {
+        "code": "DEFAULT_OPERATOR_LOSES_FALSY_VALUE",
+        "definition": "Logical OR replaces valid falsy values such as zero; nullish coalescing is required."
+      },
+      {
+        "code": "BOOLEAN_STRING_COERCION",
+        "definition": "Text such as false is treated as truthy rather than parsed explicitly."
+      },
+      {
+        "code": "NESTED_FIELD_PATH_MISMATCH",
+        "definition": "Mapping path does not match the nested structure in the supplied JSON."
+      }
     ],
     "item_linking": [
-      [
-        "ITEM_REFERENCE_AMBIGUOUS",
-        "The .item reference cannot resolve one upstream item because multiple items are possible."
-      ],
-      [
-        "PAIRED_ITEM_METADATA_MISSING",
-        "Transformed output items lack pairedItem metadata needed for downstream source-item linking."
-      ],
-      [
-        "WRONG_ITEM_SELECTOR",
-        "First or last selects the wrong item based on the explicit ordering and requirement."
-      ],
-      [
-        "FIRST_ITEM_USED_WHEN_ALL_REQUIRED",
-        "first() selects one item when the workflow requires all returned items."
-      ],
-      [
-        "UPSTREAM_NODE_REFERENCE_WRONG",
-        "Expression names the wrong upstream node although the intended node exists."
-      ],
-      [
-        "ITEM_LINEAGE_UNAVAILABLE",
-        "No reliable pairedItem lineage or stable join key is supplied; do not guess."
-      ]
+      {
+        "code": "ITEM_REFERENCE_AMBIGUOUS",
+        "definition": "The .item reference cannot resolve one upstream item because multiple items are possible."
+      },
+      {
+        "code": "PAIRED_ITEM_METADATA_MISSING",
+        "definition": "Transformed output items lack pairedItem metadata needed for downstream source-item linking."
+      },
+      {
+        "code": "WRONG_ITEM_SELECTOR",
+        "definition": "First or last selects the wrong item based on the explicit ordering and requirement."
+      },
+      {
+        "code": "FIRST_ITEM_USED_WHEN_ALL_REQUIRED",
+        "definition": "first() selects one item when the workflow requires all returned items."
+      },
+      {
+        "code": "UPSTREAM_NODE_REFERENCE_WRONG",
+        "definition": "Expression names the wrong upstream node although the intended node exists."
+      },
+      {
+        "code": "ITEM_LINEAGE_UNAVAILABLE",
+        "definition": "No reliable pairedItem lineage or stable join key is supplied; do not guess."
+      }
     ],
     "node_configuration": [
-      [
-        "HTTP_METHOD_MISMATCH",
-        "Configured HTTP method contradicts the explicit endpoint contract."
-      ],
-      [
-        "HTTP_BODY_NOT_SENT",
-        "Body data is configured but sendBody is disabled."
-      ],
-      [
-        "RESPONSE_FORMAT_MISMATCH",
-        "Response format conflicts with the downstream data requirement."
-      ],
-      [
-        "TIMEOUT_VALUE_INVALID",
-        "Timeout option has an invalid type or representation."
-      ],
-      [
-        "TIMEOUT_TOO_SHORT",
-        "Timeout is shorter than an explicit service response-time requirement."
-      ],
-      [
-        "WAIT_DURATION_MISMATCH",
-        "Wait node duration differs from the explicitly requested delay."
-      ]
+      {
+        "code": "HTTP_METHOD_MISMATCH",
+        "definition": "Configured HTTP method contradicts the explicit endpoint contract."
+      },
+      {
+        "code": "HTTP_BODY_NOT_SENT",
+        "definition": "Body data is configured but sendBody is disabled."
+      },
+      {
+        "code": "RESPONSE_FORMAT_MISMATCH",
+        "definition": "Response format conflicts with the downstream data requirement."
+      },
+      {
+        "code": "TIMEOUT_VALUE_INVALID",
+        "definition": "Timeout option has an invalid type or representation."
+      },
+      {
+        "code": "TIMEOUT_TOO_SHORT",
+        "definition": "Timeout is shorter than an explicit service response-time requirement."
+      },
+      {
+        "code": "WAIT_DURATION_MISMATCH",
+        "definition": "Wait node duration differs from the explicitly requested delay."
+      }
     ],
     "workflow_structure": [
-      [
-        "CONNECTION_MISSING",
-        "Required source-to-target edge is absent."
-      ],
-      [
-        "CONNECTION_TARGET_INVALID",
-        "Connection points to a node name not present in the workflow."
-      ],
-      [
-        "IF_BRANCH_MISROUTED",
-        "IF node true and false output targets are swapped."
-      ],
-      [
-        "MERGE_INPUT_MISSING",
-        "A required source branch is not connected to its Merge node input."
-      ],
-      [
-        "NODE_DISCONNECTED",
-        "Existing downstream node is unreachable because a required edge is absent."
-      ],
-      [
-        "OUTPUT_INDEX_INVALID",
-        "Connection references an output index invalid for the source node."
-      ]
+      {
+        "code": "CONNECTION_MISSING",
+        "definition": "Required source-to-target edge is absent."
+      },
+      {
+        "code": "CONNECTION_TARGET_INVALID",
+        "definition": "Connection points to a node name not present in the workflow."
+      },
+      {
+        "code": "IF_BRANCH_MISROUTED",
+        "definition": "IF node true and false output targets are swapped."
+      },
+      {
+        "code": "MERGE_INPUT_MISSING",
+        "definition": "A required source branch is not connected to its Merge node input."
+      },
+      {
+        "code": "NODE_DISCONNECTED",
+        "definition": "Existing downstream node is unreachable because a required edge is absent."
+      },
+      {
+        "code": "OUTPUT_INDEX_INVALID",
+        "definition": "Connection references an output index invalid for the source node."
+      }
     ],
     "code_node": [
-      [
-        "RETURN_VALUE_NOT_ARRAY",
-        "Run Once for All Items returns one object instead of an array of output items."
-      ],
-      [
-        "ITEM_JSON_WRAPPER_MISSING",
-        "Code node output items do not wrap their data inside a json property."
-      ],
-      [
-        "EXECUTION_MODE_MISMATCH",
-        "Configured Code node execution mode conflicts with the APIs and output shape used by the script."
-      ],
-      [
-        "VARIABLE_UNDEFINED",
-        "Script references a variable not declared or available in the current item context."
-      ],
-      [
-        "PRIMITIVE_OUTPUT_RETURNED",
-        "Code node returns primitive values instead of n8n item objects."
-      ],
-      [
-        "PAIRED_ITEM_NOT_PRESERVED",
-        "Transformation changes item lineage but omits the required pairedItem references."
-      ]
+      {
+        "code": "RETURN_VALUE_NOT_ARRAY",
+        "definition": "Run Once for All Items returns one object instead of an array of output items."
+      },
+      {
+        "code": "ITEM_JSON_WRAPPER_MISSING",
+        "definition": "Code node output items do not wrap their data inside a json property."
+      },
+      {
+        "code": "EXECUTION_MODE_MISMATCH",
+        "definition": "Configured Code node execution mode conflicts with the APIs and output shape used by the script."
+      },
+      {
+        "code": "VARIABLE_UNDEFINED",
+        "definition": "Script references a variable not declared or available in the current item context."
+      },
+      {
+        "code": "PRIMITIVE_OUTPUT_RETURNED",
+        "definition": "Code node returns primitive values instead of n8n item objects."
+      },
+      {
+        "code": "PAIRED_ITEM_NOT_PRESERVED",
+        "definition": "Transformation changes item lineage but omits the required pairedItem references."
+      }
     ],
     "execution_api": [
-      [
-        "RATE_LIMIT_RETRY_POLICY_MISSING",
-        "API confirms a retryable rate limit but the node lacks explicitly supported bounded retry settings."
-      ],
-      [
-        "API_PAYLOAD_FIELD_MISMATCH",
-        "API identifies a missing or incorrect request key present in the supplied input."
-      ],
-      [
-        "API_PAYLOAD_TYPE_MISMATCH",
-        "API contract specifies a required value type that differs from the request value."
-      ],
-      [
-        "UPSTREAM_SERVICE_UNAVAILABLE",
-        "Remote 5xx outage is evidenced without a safe workflow-only correction."
-      ],
-      [
-        "DNS_OR_CONNECTION_FAILURE",
-        "DNS or connection failure is evidenced without proof of a workflow parameter fault."
-      ],
-      [
-        "REQUEST_TIMEOUT",
-        "Explicit service timing requirement exceeds the configured request timeout."
-      ]
+      {
+        "code": "RATE_LIMIT_RETRY_POLICY_MISSING",
+        "definition": "API confirms a retryable rate limit but the node lacks explicitly supported bounded retry settings."
+      },
+      {
+        "code": "API_PAYLOAD_FIELD_MISMATCH",
+        "definition": "API identifies a missing or incorrect request key present in the supplied input."
+      },
+      {
+        "code": "API_PAYLOAD_TYPE_MISMATCH",
+        "definition": "API contract specifies a required value type that differs from the request value."
+      },
+      {
+        "code": "UPSTREAM_SERVICE_UNAVAILABLE",
+        "definition": "Remote 5xx outage is evidenced without a safe workflow-only correction."
+      },
+      {
+        "code": "DNS_OR_CONNECTION_FAILURE",
+        "definition": "DNS or connection failure is evidenced without proof of a workflow parameter fault."
+      },
+      {
+        "code": "REQUEST_TIMEOUT",
+        "definition": "Explicit service timing requirement exceeds the configured request timeout."
+      }
     ],
     "credentials": [
-      [
-        "AUTHENTICATION_REJECTED",
-        "Provider rejects configured authentication; credential owner must verify it."
-      ],
-      [
-        "PERMISSION_INSUFFICIENT",
-        "Authenticated identity lacks required provider permission or scope."
-      ],
-      [
-        "CREDENTIAL_REFERENCE_MISSING",
-        "Credentialed operation has no selected credential reference."
-      ],
-      [
-        "OAUTH_CREDENTIAL_EXPIRED",
-        "Provider reports expired OAuth authorization requiring owner reauthorization."
-      ],
-      [
-        "API_KEY_REVOKED_OR_MISSING",
-        "Provider rejects or reports an unavailable API key; model must not guess a replacement."
-      ],
-      [
-        "SECRET_VALUE_REDACTED",
-        "Required secret is redacted or unavailable, so no safe secret-related patch is possible."
-      ]
+      {
+        "code": "AUTHENTICATION_REJECTED",
+        "definition": "Provider rejects configured authentication; credential owner must verify it."
+      },
+      {
+        "code": "PERMISSION_INSUFFICIENT",
+        "definition": "Authenticated identity lacks required provider permission or scope."
+      },
+      {
+        "code": "CREDENTIAL_REFERENCE_MISSING",
+        "definition": "Credentialed operation has no selected credential reference."
+      },
+      {
+        "code": "OAUTH_CREDENTIAL_EXPIRED",
+        "definition": "Provider reports expired OAuth authorization requiring owner reauthorization."
+      },
+      {
+        "code": "API_KEY_REVOKED_OR_MISSING",
+        "definition": "Provider rejects or reports an unavailable API key; model must not guess a replacement."
+      },
+      {
+        "code": "SECRET_VALUE_REDACTED",
+        "definition": "Required secret is redacted or unavailable, so no safe secret-related patch is possible."
+      }
     ]
   },
   "abstention_rules": [
