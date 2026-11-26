@@ -4,7 +4,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from validate_n8n_dataset import validate_dataset
+from validate_n8n_dataset import validate_dataset  # noqa: E402
 
 
 def test_complete_n8n_recipe_dataset_is_valid():
