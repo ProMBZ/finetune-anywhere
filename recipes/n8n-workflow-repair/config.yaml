@@ -1,0 +1,10 @@
+model: starter
+recipe: n8n-workflow-repair
+rank: 16
+alpha: 32
+learning_rate: 0.0001
+epochs: 3
+max_seq_length: 1536
+batch_size: 1
+gradient_accumulation_steps: 4
+seed: 42
