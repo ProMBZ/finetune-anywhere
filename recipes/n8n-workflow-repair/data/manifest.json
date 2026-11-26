@@ -1,19 +1,19 @@
 {
   "name": "n8n workflow diagnosis and repair dataset",
-  "version": "0.2.0",
-  "provenance": "Original synthetic diagnostic cases authored for this project. No customer workflows, secrets, or copied production exports.",
+  "version": "0.3.0",
+  "provenance": "Original synthetic diagnostic cases. The existing v0.2 training and validation records were retained with diagnosis labels normalized into this controlled taxonomy; additional cases were authored from curated code-specific scenarios with varied node names, payloads, errors, and workflow structures. No customer workflows, secrets, production exports or copied user records are included.",
   "license": "MIT (repository license)",
   "format": "JSONL chat messages: system, user, assistant",
   "counts": {
-    "train": 200,
-    "valid": 50,
-    "eval": 50,
-    "total": 300
+    "train": 640,
+    "valid": 128,
+    "eval": 192,
+    "total": 960
   },
-  "additions": {
-    "train": 160,
-    "valid": 40,
-    "eval": 40
+  "archived_benchmark": {
+    "file": "archive/eval-v0.2.jsonl",
+    "cases": 50,
+    "note": "Preserved unchanged for historical comparison only. Not used for training, validation, or v0.3 evaluation."
   },
   "categories": [
     "expression",
@@ -25,61 +25,55 @@
     "execution_api",
     "credentials"
   ],
-  "category_counts_by_split": {
+  "diagnosis_code_taxonomy": "diagnosis-codes.json",
+  "distribution": {
     "train": {
-      "count": 200,
-      "byCategory": {
-        "expression": 25,
-        "data_mapping": 25,
-        "item_linking": 25,
-        "node_configuration": 25,
-        "workflow_structure": 25,
-        "code_node": 25,
-        "execution_api": 25,
-        "credentials": 25
-      }
+      "expression": 80,
+      "data_mapping": 80,
+      "item_linking": 80,
+      "node_configuration": 80,
+      "workflow_structure": 80,
+      "code_node": 80,
+      "execution_api": 80,
+      "credentials": 80
     },
     "valid": {
-      "count": 50,
-      "byCategory": {
-        "expression": 6,
-        "data_mapping": 6,
-        "item_linking": 6,
-        "node_configuration": 6,
-        "workflow_structure": 7,
-        "code_node": 6,
-        "execution_api": 7,
-        "credentials": 6
-      }
+      "expression": 16,
+      "data_mapping": 16,
+      "item_linking": 16,
+      "node_configuration": 16,
+      "workflow_structure": 16,
+      "code_node": 16,
+      "execution_api": 16,
+      "credentials": 16
     },
     "eval": {
-      "count": 50,
-      "byCategory": {
-        "expression": 6,
-        "data_mapping": 6,
-        "item_linking": 6,
-        "node_configuration": 7,
-        "workflow_structure": 6,
-        "code_node": 6,
-        "execution_api": 7,
-        "credentials": 6
-      }
+      "expression": 24,
+      "data_mapping": 24,
+      "item_linking": 24,
+      "node_configuration": 24,
+      "workflow_structure": 24,
+      "code_node": 24,
+      "execution_api": 24,
+      "credentials": 24
     }
   },
   "design": {
-    "training": "Fixable and abstention cases across expressions, data mapping, item linking, node configuration, workflow structure, Code node output, external API failures, and credentials.",
-    "validation": "Separate synthetic cases for tuning and early stopping; do not merge into training.",
-    "evaluation": "50 held-out references including the original 10 baseline cases. Do not train on this split or iteratively hand-tune against it.",
-    "safety": "Credentials and secrets are never patched. Ambiguous item-linking and external infrastructure/API failures require human review.",
-    "limits": "Synthetic benchmark; not representative of all n8n failures. A structurally applicable JSON Patch does not prove runtime success. Some valid repairs may differ from the single gold patch."
+    "training": "640 examples, balanced to 80 per category and codebook-driven canonical diagnosis labels. Includes the 200 v0.2 train cases and 50 former validation cases after diagnosis-code normalization, plus 390 new cases.",
+    "validation": "128 newly authored cases, 16 per category, separate from training.",
+    "evaluation": "192 newly authored cases, 24 per category and four per canonical diagnosis code. This set is separate from all training and validation examples. Keep it untouched.",
+    "diagnosis_codes": "48 canonical labels: six per category, explicitly listed in diagnosis-codes.json and in the system instruction.",
+    "retrieval": "The same retrieved official documentation is provided to training, validation, and evaluation prompts to avoid a train/evaluation context mismatch.",
+    "safety": "Credentials and secrets always abstain. External outages and ambiguous item lineage abstain unless supplied evidence supports a safe, minimal correction.",
+    "limits": "Synthetic benchmark; not representative of all real n8n failures. Patch applicability checks the JSON fixture and workflow graph only; it does not execute n8n. A gold-patch match is strict and may penalize alternative valid repairs."
   },
   "validation": {
-    "chat_schema": "Each record has exactly system/user/assistant messages.",
-    "unique_case_ids": "All 300 records have unique case_id values.",
+    "jsonl_schema": "Each record has exactly system, user, assistant messages.",
+    "unique_case_ids": true,
     "unique_prompts": true,
-    "patch_application": "All non-empty authored patches applied to their synthetic workflow fixtures.",
-    "workflow_connections": "All workflow connection source and target names validated after patches.",
-    "credential_cases": "All credential cases abstain with empty patches.",
-    "secret_paths": "No authored patch targets credentials or secrets."
+    "category_balance": "80/16/24 per category across train/valid/eval.",
+    "code_balance": "All 48 canonical codes appear in all three splits.",
+    "secret_safety": "No patch writes to credentials or secret paths.",
+    "patch_application": "All non-empty reference patches apply to their synthetic workflow fixtures and produce sound node connections."
   }
 }
