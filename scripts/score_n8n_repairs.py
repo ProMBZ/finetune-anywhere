@@ -188,7 +188,7 @@ def _patch_applicable(output: dict[str, Any], prompt: str) -> bool | None:
     if not isinstance(patch, list):
         return False
     if not patch:
-        return True if output.get("needs_human_review") is True else False
+        return None if output.get("needs_human_review") is True else False
     case = _prompt_case(prompt)
     workflow = case.get("workflow") if case else None
     if workflow is None:
