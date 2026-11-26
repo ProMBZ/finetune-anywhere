@@ -77,7 +77,7 @@
       },
       {
         "code": "ITEM_LINEAGE_UNAVAILABLE",
-        "definition": "No reliable pairedItem lineage or stable join key is supplied; do not guess."
+        "definition": "Paired-item metadata is unavailable. Use a single-item selector such as .first() only when the supplied evidence explicitly guarantees exactly one upstream item; otherwise abstain and request human review."
       }
     ],
     "node_configuration": [
