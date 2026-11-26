@@ -18,7 +18,7 @@ There are 48 canonical diagnosis codes: six in each of eight categories. Exact v
 - Training retains 197 reviewed v0.2 training examples and 50 former validation examples after diagnosis-label normalization, plus 393 new or replacement synthetic scenarios.
 - Validation contains 128 new cases.
 - Evaluation contains 192 new cases, 24 per category and four per diagnosis code.
-- The previous 50-case evaluation set is archived unchanged in archive/eval-v0.2.jsonl. It is not used for v0.3 training or evaluation. The new v0.3 evaluation scenarios use templates separate from the retained training examples.
+- The previous 50-case evaluation set is archived unchanged in archive/eval-v0.2.jsonl. It is not used for v0.3 training or evaluation. The new v0.3 evaluation prompts use unique case IDs, inputs and execution descriptions. Some underlying repair patterns necessarily recur because the diagnosis taxonomy is finite.
 
 ## Coverage and provenance
 
