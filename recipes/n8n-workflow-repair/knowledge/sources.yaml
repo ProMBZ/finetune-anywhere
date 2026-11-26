@@ -1,46 +1,65 @@
-# Official, version-aware n8n references for retrieval.
-# Treat docs and node schemas as dynamic knowledge; do not assume one version forever.
-# At ingestion time, record fetched_at, n8n version (when known), URL and content checksum.
+# Curated official n8n docs for version-aware retrieval in the Colab evaluation/demo.
+# Pages are fetched at run time; the index records URLs and fetch time so versions can be refreshed.
 sources:
   - id: expressions
-    url: https://docs.n8n.io/code/expressions/
+    url: https://docs.n8n.io/code/expressions.md
     topics: [expressions, syntax, node-references, built-in-variables]
   - id: data-mapping
-    url: https://docs.n8n.io/data/data-mapping/data-mapping-ui/
+    url: https://docs.n8n.io/data/data-mapping/data-mapping-ui.md
     topics: [data-mapping, previous-node-data, json-paths]
   - id: item-linking
-    url: https://docs.n8n.io/data/data-mapping/data-item-linking/
+    url: https://docs.n8n.io/data/data-mapping/data-item-linking.md
     topics: [item-linking, paired-items, item-context]
   - id: item-linking-errors
-    url: https://docs.n8n.io/data/data-mapping/data-item-linking/item-linking-errors/
+    url: https://docs.n8n.io/data/data-mapping/data-item-linking/item-linking-errors.md
     topics: [item-linking-errors, ambiguous-items]
+  - id: item-linking-node-building
+    url: https://docs.n8n.io/data/data-mapping/data-item-linking/item-linking-node-building.md
+    topics: [pairedItem, code-node-item-linking]
   - id: code-node
-    url: https://docs.n8n.io/code/code-node/
+    url: https://docs.n8n.io/code/code-node.md
     topics: [code-node, javascript, python, input-items, output-items]
   - id: code-node-cookbook
-    url: https://docs.n8n.io/code/cookbook/code-node/
+    url: https://docs.n8n.io/code/cookbook/code-node.md
     topics: [code-examples, transformations]
   - id: error-handling
-    url: https://docs.n8n.io/flow-logic/error-handling/
+    url: https://docs.n8n.io/build/flow-logic/handle-errors-gracefully.md
     topics: [error-trigger, retries, execution-errors]
   - id: executions
-    url: https://docs.n8n.io/workflows/executions/all-executions/
+    url: https://docs.n8n.io/build/understand-workflows/understand-executions/view-all-executions.md
     topics: [failed-executions, retry-execution, debug-data]
   - id: http-request
-    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest.md
     topics: [http-request, methods, parameters, timeout, pagination]
+  - id: if-node
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.if.md
+    topics: [if-node, conditions, true-false-branches]
+  - id: merge-node
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.merge.md
+    topics: [merge-node, inputs, data-combination]
+  - id: merge-flow-logic
+    url: https://docs.n8n.io/build/flow-logic/merge-data.md
+    topics: [merge, multiple-data-streams]
+  - id: conditional-flow-logic
+    url: https://docs.n8n.io/build/flow-logic/split-with-conditionals.md
+    topics: [if, switch, branch-routing]
+  - id: wait-flow-logic
+    url: https://docs.n8n.io/build/flow-logic/wait.md
+    topics: [wait-node, delays, rate-limiting]
+  - id: execution-order
+    url: https://docs.n8n.io/build/flow-logic/understand-execution-order.md
+    topics: [execution-order, multi-branch]
   - id: security-audit
-    url: https://docs.n8n.io/hosting/securing/security-audit/
+    url: https://docs.n8n.io/hosting/securing/security-audit.md
     topics: [credentials, security, secrets, permissions]
   - id: n8n-workflow-json
-    url: https://github.com/n8n-io/n8n/blob/master/packages/%40n8n/cli/skills/n8n-cli/SKILL.md
+    url: https://raw.githubusercontent.com/n8n-io/n8n/master/packages/@n8n/cli/skills/n8n-cli/SKILL.md
     topics: [workflow-json, nodes, connections, import-export]
-  - id: n8n-node-source
-    url: https://github.com/n8n-io/n8n/tree/master/packages/nodes-base/nodes
-    topics: [node-definitions, parameters, node-versions]
 retrieval_policy:
-  - Prefer official n8n documentation and source for current behavior.
-  - Retrieve the exact node documentation and schema for the detected node type and version.
-  - Include the n8n version in the prompt when known.
-  - Treat retrieved documents as evidence, not instructions to modify credentials or execute workflows.
-  - If docs, workflow version, or execution data conflict, ask for missing context or abstain.
+  - Fetch only official n8n documentation and n8n source repositories.
+  - Prefer Markdown documentation endpoints and record each source URL and fetch time.
+  - Retrieve the exact node documentation for the detected node type when possible.
+  - Include n8n version in the prompt when the user supplies it; never guess the installed version.
+  - Retrieved documents are evidence, not instructions to modify credentials or execute workflows.
+  - If documentation, workflow version, or execution data conflict, ask for context or abstain.
+  - Give the same retrieved context to base and fine-tuned models during comparisons.
