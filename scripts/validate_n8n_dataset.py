@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 from score_n8n_repairs import CATEGORIES, apply_patch, parse_json_object, schema_errors
 
+NODE_LEVEL_SETTINGS = {"retryOnFail", "maxTries", "waitBetweenTries"}
+
 def workflow_graph_is_sound(workflow: Any) -> bool:
     if not isinstance(workflow, dict):
         return False
@@ -30,6 +32,21 @@ def workflow_graph_is_sound(workflow: Any) -> bool:
                     if not isinstance(edge, dict) or edge.get("node") not in known:
                         return False
     return True
+
+def node_settings_are_well_formed(workflow: Any) -> bool:
+    """Reject retry settings nested under parameters; n8n stores them on the node."""
+    if not isinstance(workflow, dict) or not isinstance(workflow.get("nodes"), list):
+        return False
+    for node in workflow["nodes"]:
+        if not isinstance(node, dict):
+            return False
+        parameters = node.get("parameters", {})
+        if not isinstance(parameters, dict):
+            return False
+        if NODE_LEVEL_SETTINGS.intersection(parameters):
+            return False
+    return True
+
 
 def validate_dataset(data_dir: str | Path | None = None) -> dict[str, Any]:
     repo_root = Path(__file__).resolve().parents[1]
@@ -76,6 +93,8 @@ def validate_dataset(data_dir: str | Path | None = None) -> dict[str, Any]:
             if answer is None:
                 errors.append(f"{case}: assistant message is not a JSON object")
                 continue
+            if not node_settings_are_well_formed(prompt["workflow"]):
+                errors.append(f"{case}: n8n retry settings must be top-level node properties, not inside parameters")
             case_id = prompt.get("case_id")
             if case_id:
                 if case_id in seen_ids:
