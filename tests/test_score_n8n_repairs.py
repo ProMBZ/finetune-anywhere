@@ -67,3 +67,24 @@ def test_singleton_item_lineage_can_use_first_when_evidence_proves_one_result():
         [{"op": "replace", "path": "/nodes/1/parameters/value", "value": "={{ $('Lookup').first().json.value }}"}],
     )
     assert schema_errors(valid) == []
+
+
+def test_schema_errors_handles_malformed_types_without_crashing():
+    malformed = {
+        "category": [],
+        "diagnosis_code": {},
+        "faulty_node": "Call CRM",
+        "root_cause": "Invalid response shape",
+        "patch": [{"op": "explode", "path": [], "value": 1}],
+        "needs_human_review": "yes",
+    }
+    assert schema_errors(malformed)
+
+
+def test_apply_patch_rejects_unknown_operation():
+    try:
+        apply_patch({"nodes": [], "connections": {}}, [{"op": "explode", "path": "/nodes/0"}])
+    except ValueError as exc:
+        assert "unsupported" in str(exc)
+    else:
+        raise AssertionError("unknown patch operations must be rejected")
