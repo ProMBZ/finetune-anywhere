@@ -1,0 +1,22 @@
+{
+  "license": "MIT",
+  "provenance": "Original synthetic n8n troubleshooting cases authored for this project. No scraped workflow exports, credentials, customer data, or copied source code.",
+  "task": "Diagnose an n8n workflow error and propose a minimal JSON Patch operation, or abstain when unsafe/unsupported.",
+  "splits": {
+    "train": 40,
+    "valid": 10,
+    "eval": 10
+  },
+  "categories": [
+    "expression",
+    "data_mapping",
+    "item_linking",
+    "node_configuration",
+    "workflow_structure",
+    "code_node",
+    "execution_api",
+    "credentials"
+  ],
+  "split_policy": "Separately authored cases; no identifier substitution or cross-split prompt reuse.",
+  "limitations": "The benchmark measures output schema, diagnosis, gold patch match, patch applicability to supplied synthetic workflow fixtures, and safe abstention. Patch applicability is not proof of successful execution in a live n8n instance."
+}
