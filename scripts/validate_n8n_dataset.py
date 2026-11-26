@@ -38,6 +38,14 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
     repo_root=Path(__file__).resolve().parents[1]
     root=Path(data_dir) if data_dir else repo_root/"recipes"/"n8n-workflow-repair"/"data"
     manifest=json.loads((root/"manifest.json").read_text(encoding="utf-8"))
+    taxonomy=json.loads((root/"diagnosis-codes.json").read_text(encoding="utf-8"))
+    taxonomy_codes={
+        category:{entry.get("code") for entry in entries if isinstance(entry,dict)}
+        for category,entries in taxonomy.get("categories",{}).items()
+        if isinstance(entries,list)
+    }
+    if taxonomy_codes!=CODES_BY_CATEGORY:
+        raise ValueError("diagnosis-codes.json does not match the scorer's canonical codebook")
     expected=manifest.get("counts",{})
     expected_distribution=manifest.get("distribution",{})
     expected_code_distribution=manifest.get("code_distribution",{})
