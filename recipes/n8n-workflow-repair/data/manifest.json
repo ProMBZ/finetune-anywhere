@@ -75,7 +75,7 @@
   },
   "validation": {
     "chat_schema": "Each record has exactly system/user/assistant messages.",
-    "unique_case_ids": true,
+    "unique_case_ids": "All 300 records have unique case_id values.",
     "unique_prompts": true,
     "patch_application": "All non-empty authored patches applied to their synthetic workflow fixtures.",
     "workflow_connections": "All workflow connection source and target names validated after patches.",
