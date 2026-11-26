@@ -15,7 +15,7 @@ Eight categories are covered: expression, data_mapping, item_linking, node_confi
 
 There are 48 canonical diagnosis codes (six per category). The codebook is in `data/diagnosis-codes.json`; Colab adds its concise code definitions to the shared system prompt for train, validation and evaluation. v0.2 contained inconsistent near-synonymous labels such as `AMBIGUOUS_ITEM_LINK` and `AMBIGUOUS_ITEM_LINKING`, which made exact code scoring unnecessarily noisy.
 
-The training split is balanced at 80 cases per category. It retains 200 v0.2 training cases and 50 former validation cases after normalizing their diagnosis labels, plus 390 newly authored synthetic examples. Validation and evaluation are new. The held-out evaluation split contains 192 cases: 24 per category and four per diagnosis code. Its scenario templates are separate from those used in training. The original v0.2 evaluation set is archived unchanged at `data/archive/eval-v0.2.jsonl` and is not used for v0.3 training.
+The training split is balanced at 80 cases per category. It retains 197 reviewed v0.2 training cases and 50 former validation cases after normalizing their diagnosis labels, plus 393 new or replacement synthetic examples. Validation and evaluation prompts are newly authored. The held-out evaluation split contains 192 cases: 24 per category and four per diagnosis code. The test prompts use unique case IDs, input data and execution descriptions; some underlying repair patterns necessarily recur because the diagnosis taxonomy is finite. The original v0.2 evaluation set is archived unchanged at `data/archive/eval-v0.2.jsonl` and is not used for v0.3 training.
 
 ## Evaluation improvements
 
