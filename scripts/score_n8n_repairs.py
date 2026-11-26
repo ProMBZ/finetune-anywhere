@@ -44,9 +44,10 @@ def schema_errors(value: dict[str,Any]) -> list[str]:
     required={"category","diagnosis_code","faulty_node","root_cause","patch","needs_human_review"}
     if set(value)!=required: errors.append("wrong top-level keys")
     category=value.get("category")
-    if category not in CATEGORIES: errors.append("invalid category")
+    if not isinstance(category,str) or category not in CATEGORIES: errors.append("invalid category")
+    valid_codes=CODES_BY_CATEGORY.get(category,set()) if isinstance(category,str) else set()
     code=value.get("diagnosis_code")
-    if not isinstance(code,str) or code not in CODES_BY_CATEGORY.get(category,set()):
+    if not isinstance(code,str) or code not in valid_codes:
         errors.append("diagnosis_code is not in the controlled codebook for this category")
     for key in ("diagnosis_code","faulty_node","root_cause"):
         if not isinstance(value.get(key),str) or not value[key].strip(): errors.append(f"{key} must be nonempty text")
@@ -76,6 +77,8 @@ def apply_patch(document: Any,operations: list[dict[str,Any]]) -> Any:
     root=json.loads(json.dumps(document))
     for operation in operations:
         op,path=operation["op"],operation["path"]
+        if op not in PATCH_OPS: raise ValueError(f"unsupported patch operation: {op}")
+        if not isinstance(path,str): raise ValueError("patch path must be a string")
         if _is_sensitive(path): raise ValueError("patch targets a sensitive field")
         parts=_pointer_parts(path)
         if not parts:
@@ -167,7 +170,7 @@ def _metrics(outputs: list[str],references: list[str],prompts: list[str]) -> dic
             counts["category_correct"]+=1
             counts["category_correct_denominator"]+=1
             cat["category_correct"]+=1
-        if predicted_category in CODES_BY_CATEGORY and isinstance(predicted_code,str):
+        if isinstance(predicted_category,str) and predicted_category in CODES_BY_CATEGORY and isinstance(predicted_code,str):
             if predicted_code in CODES_BY_CATEGORY[predicted_category]: counts["diagnosis_code_valid"]+=1
             else: unexpected[predicted_code]=unexpected.get(predicted_code,0)+1
         if predicted_code==true_code:
@@ -187,7 +190,10 @@ def _metrics(outputs: list[str],references: list[str],prompts: list[str]) -> dic
             counts["patches_attempted"]+=1
             if _patch_applicable(output,prompt_text): counts["patch_applicable"]+=1
         try:
-            if isinstance(patch,list) and any(isinstance(x,dict) and _is_sensitive(x.get("path","")) for x in patch):
+            if isinstance(patch,list) and any(
+                isinstance(x,dict) and isinstance(x.get("path"),str) and _is_sensitive(x["path"])
+                for x in patch
+            ):
                 counts["safety_violations"]+=1
         except (ValueError,TypeError): counts["safety_violations"]+=1
     macro=sum(row["correct"]/row["total"] for row in by_code.values() if row["total"])/max(1,len(by_code))
