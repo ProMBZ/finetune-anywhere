@@ -1,11 +1,19 @@
 {
-  "license": "MIT",
-  "provenance": "Original synthetic n8n troubleshooting cases authored for this project. No scraped workflow exports, credentials, customer data, or copied source code.",
-  "task": "Diagnose an n8n workflow error and propose a minimal JSON Patch operation, or abstain when unsafe/unsupported.",
-  "splits": {
-    "train": 40,
-    "valid": 10,
-    "eval": 10
+  "name": "n8n workflow diagnosis and repair dataset",
+  "version": "0.2.0",
+  "provenance": "Original synthetic diagnostic cases authored for this project. No customer workflows, secrets, or copied production exports.",
+  "license": "MIT (repository license)",
+  "format": "JSONL chat messages: system, user, assistant",
+  "counts": {
+    "train": 200,
+    "valid": 50,
+    "eval": 50,
+    "total": 300
+  },
+  "additions": {
+    "train": 160,
+    "valid": 40,
+    "eval": 40
   },
   "categories": [
     "expression",
@@ -17,6 +25,61 @@
     "execution_api",
     "credentials"
   ],
-  "split_policy": "Separately authored cases; no identifier substitution or cross-split prompt reuse.",
-  "limitations": "The benchmark measures output schema, diagnosis, gold patch match, patch applicability to supplied synthetic workflow fixtures, and safe abstention. Patch applicability is not proof of successful execution in a live n8n instance."
+  "category_counts_by_split": {
+    "train": {
+      "count": 200,
+      "byCategory": {
+        "expression": 25,
+        "data_mapping": 25,
+        "item_linking": 25,
+        "node_configuration": 25,
+        "workflow_structure": 25,
+        "code_node": 25,
+        "execution_api": 25,
+        "credentials": 25
+      }
+    },
+    "valid": {
+      "count": 50,
+      "byCategory": {
+        "expression": 6,
+        "data_mapping": 6,
+        "item_linking": 6,
+        "node_configuration": 6,
+        "workflow_structure": 7,
+        "code_node": 6,
+        "execution_api": 7,
+        "credentials": 6
+      }
+    },
+    "eval": {
+      "count": 50,
+      "byCategory": {
+        "expression": 6,
+        "data_mapping": 6,
+        "item_linking": 6,
+        "node_configuration": 7,
+        "workflow_structure": 6,
+        "code_node": 6,
+        "execution_api": 7,
+        "credentials": 6
+      }
+    }
+  },
+  "design": {
+    "training": "Fixable and abstention cases across expressions, data mapping, item linking, node configuration, workflow structure, Code node output, external API failures, and credentials.",
+    "validation": "Separate synthetic cases for tuning and early stopping; do not merge into training.",
+    "evaluation": "50 held-out references including the original 10 baseline cases. Do not train on this split or iteratively hand-tune against it.",
+    "safety": "Credentials and secrets are never patched. Ambiguous item-linking and external infrastructure/API failures require human review.",
+    "limits": "Synthetic benchmark; not representative of all n8n failures. A structurally applicable JSON Patch does not prove runtime success. Some valid repairs may differ from the single gold patch."
+  },
+  "validation": {
+    "chat_schema": "Each record has exactly system/user/assistant messages.",
+    "unique_case_ids": true,
+    "unique_prompts": true,
+    "patch_application": "All non-empty authored patches applied to their synthetic workflow fixtures.",
+    "workflow_connections": "All workflow connection source and target names validated after patches.",
+    "credential_cases": "All credential cases abstain with empty patches.",
+    "secret_paths": "No authored patch targets credentials or secrets."
+  }
 }
