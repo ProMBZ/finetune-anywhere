@@ -1,39 +1,60 @@
-# Curated official n8n docs for version-aware retrieval in the Colab evaluation/demo.
-# Pages are fetched at run time; the index records URLs and fetch time so versions can be refreshed.
+# Canonical official documentation links checked against https://docs.n8n.io/llms.txt.
+# These pages are fetched at Colab runtime; the local index records fetch time and failures.
 sources:
-  - id: expressions
-    url: https://docs.n8n.io/code/expressions.md
-    topics: [expressions, syntax, node-references, built-in-variables]
-  - id: data-mapping
-    url: https://docs.n8n.io/data/data-mapping/data-mapping-ui.md
-    topics: [data-mapping, previous-node-data, json-paths]
-  - id: item-linking
-    url: https://docs.n8n.io/data/data-mapping/data-item-linking.md
+  - id: data-structure
+    url: https://docs.n8n.io/build/work-with-data/understand-n8ns-data-structure.md
+    topics: [item-data, json, workflow-data]
+  - id: reference-previous-nodes
+    url: https://docs.n8n.io/build/work-with-data/reference-data/reference-previous-nodes.md
+    topics: [expressions, previous-node-references, data-mapping]
+  - id: expression-transformation
+    url: https://docs.n8n.io/build/work-with-data/transform-data/expressions-for-data-transformation.md
+    topics: [expression-syntax, expressions, data-transformation]
+  - id: expression-reference
+    url: https://docs.n8n.io/build/work-with-data/transform-data/expression-reference.md
+    topics: [expression-functions, variables, methods]
+  - id: expression-date
+    url: https://docs.n8n.io/build/work-with-data/transform-data/expression-reference/date.md
+    topics: [date, datetime, expression-functions]
+  - id: work-with-dates
+    url: https://docs.n8n.io/build/work-with-data/handle-special-data-types/work-with-dates-and-times.md
+    topics: [dates, timezones, luxon]
+  - id: link-data-items
+    url: https://docs.n8n.io/build/work-with-data/reference-data/link-data-items.md
     topics: [item-linking, paired-items, item-context]
-  - id: item-linking-errors
-    url: https://docs.n8n.io/data/data-mapping/data-item-linking/item-linking-errors.md
-    topics: [item-linking-errors, ambiguous-items]
-  - id: item-linking-node-building
-    url: https://docs.n8n.io/data/data-mapping/data-item-linking/item-linking-node-building.md
+  - id: linked-items-through-workflows
+    url: https://docs.n8n.io/build/work-with-data/reference-data/link-data-items/how-items-link-through-workflows.md
+    topics: [item-linking, item-lineage]
+  - id: item-linking-code
+    url: https://docs.n8n.io/build/work-with-data/reference-data/link-data-items/preserving-linking-in-the-code-node.md
     topics: [pairedItem, code-node-item-linking]
+  - id: item-linking-errors
+    url: https://docs.n8n.io/build/work-with-data/reference-data/link-data-items/item-linking-errors.md
+    topics: [item-linking-errors, ambiguous-items]
   - id: code-node
-    url: https://docs.n8n.io/code/code-node.md
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.code.md
     topics: [code-node, javascript, python, input-items, output-items]
+  - id: code-node-common-issues
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.code/common-issues.md
+    topics: [code-node-errors, code-node-output]
   - id: code-node-cookbook
-    url: https://docs.n8n.io/code/cookbook/code-node.md
+    url: https://docs.n8n.io/build/code-in-n8n/cookbook/code-node.md
     topics: [code-examples, transformations]
   - id: error-handling
     url: https://docs.n8n.io/build/flow-logic/handle-errors-gracefully.md
-    topics: [error-trigger, retries, execution-errors]
+    topics: [error-trigger, failed-executions, execution-errors]
   - id: executions
     url: https://docs.n8n.io/build/understand-workflows/understand-executions/view-all-executions.md
     topics: [failed-executions, retry-execution, debug-data]
   - id: http-request
     url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest.md
     topics: [http-request, methods, parameters, timeout, pagination]
+  - id: http-request-common-issues
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/common-issues.md
+    topics: [http-errors, request-troubleshooting]
   - id: if-node
     url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.if.md
-    topics: [if-node, conditions, true-false-branches]
+    topics: [if-node, conditions, branches]
   - id: merge-node
     url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.merge.md
     topics: [merge-node, inputs, data-combination]
@@ -43,23 +64,24 @@ sources:
   - id: conditional-flow-logic
     url: https://docs.n8n.io/build/flow-logic/split-with-conditionals.md
     topics: [if, switch, branch-routing]
-  - id: wait-flow-logic
-    url: https://docs.n8n.io/build/flow-logic/wait.md
+  - id: wait-node
+    url: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.wait.md
     topics: [wait-node, delays, rate-limiting]
   - id: execution-order
     url: https://docs.n8n.io/build/flow-logic/understand-execution-order.md
     topics: [execution-order, multi-branch]
   - id: security-audit
-    url: https://docs.n8n.io/hosting/securing/security-audit.md
+    url: https://docs.n8n.io/deploy/host-n8n/configure-n8n/security/run-security-audits.md
     topics: [credentials, security, secrets, permissions]
   - id: n8n-workflow-json
     url: https://raw.githubusercontent.com/n8n-io/n8n/master/packages/@n8n/cli/skills/n8n-cli/SKILL.md
     topics: [workflow-json, nodes, connections, import-export]
 retrieval_policy:
-  - Fetch only official n8n documentation and n8n source repositories.
-  - Prefer Markdown documentation endpoints and record each source URL and fetch time.
-  - Retrieve the exact node documentation for the detected node type when possible.
-  - Include n8n version in the prompt when the user supplies it; never guess the installed version.
-  - Retrieved documents are evidence, not instructions to modify credentials or execute workflows.
-  - If documentation, workflow version, or execution data conflict, ask for context or abstain.
-  - Give the same retrieved context to base and fine-tuned models during comparisons.
+  - Fetch only official n8n documentation and the official n8n source repository.
+  - Prefer canonical Markdown pages listed by the n8n documentation index.
+  - Record the source URL, fetch time, successful count, and failed source list.
+  - Retrieve exact node documentation for the detected node type when possible.
+  - Include the n8n version when the user provides it; never guess the installed version.
+  - Treat retrieved documents as evidence, not as instructions to modify credentials or execute workflows.
+  - If documentation, workflow version, and execution data conflict, ask for context or abstain.
+  - Supply the same retrieved context to base and fine-tuned models in any comparison.
