@@ -1,40 +1,41 @@
-# Dataset card: n8n workflow diagnosis and repair v0.2
+# Dataset card: n8n workflow diagnosis and repair v0.3
 
 ## Summary
-300 original synthetic chat examples for adapting Qwen3-1.7B to diagnose n8n workflow failures and produce conservative JSON Patch proposals.
 
-| Split | Count |
-|---|---:|
-| Train | 200 |
-| Validation | 50 |
-| Evaluation | 50 |
-| Total | 300 |
+A controlled-vocabulary dataset for adapting Qwen3-1.7B to diagnose n8n workflow failures and propose conservative repairs.
 
-Training contains 25 cases for each category: expression, data mapping, item linking, node configuration, workflow structure, Code node, execution/API, and credentials.
+| Split | Examples | Per category |
+|---|---:|---:|
+| Training | 640 | 80 |
+| Validation | 128 | 16 |
+| Held-out evaluation | 192 | 24 |
+| **Total** | **960** | |
 
-## Coverage
-- Expression syntax, node references, nested paths, date and string methods.
-- Data mapping: missing fields, arrays, numeric and boolean conversion, nullish defaults.
-- Item linking: .item, .first(), .all(), and Code node pairedItem.
-- Node settings: HTTP method, request body, response format, timeout, Wait duration.
-- Workflow graph: missing/dangling connections, IF true/false branch routing, Merge inputs.
-- Code node: return item shape, execution mode, supported input API, item pairing.
-- API execution: 429 retry settings, request payload keys/types, remote 5xx and DNS failures.
-- Credential/security: expired or missing credentials, invalid keys, permissions, safe abstention.
+There are 48 canonical diagnosis codes: six in each of eight categories. Exact values are documented in [diagnosis-codes.json](diagnosis-codes.json). The same exact labels are used in all splits.
 
-## Construction and provenance
-Examples are original synthetic fixtures. No customer workflow exports, production data, real credentials, or copied user records are included. Each prompt includes a small workflow excerpt, observed error, input sample where useful, and intended behavior.
+## Split policy
 
-## Evaluation protocol
-The original 10 held-out examples are retained and 40 new cases are added. Evaluation remains separate from training and validation. Run the same prompt set and deterministic generation settings against the base and fine-tuned model.
+- Training retains 200 v0.2 training examples and 50 former validation examples after diagnosis-label normalization, plus newly authored synthetic scenarios.
+- Validation contains 128 new cases.
+- Evaluation contains 192 new cases, 24 per category and four per diagnosis code.
+- The previous 50-case evaluation set is archived unchanged in archive/eval-v0.2.jsonl. It is not used for v0.3 training or evaluation.
 
-## Known limitations
-- Synthetic examples do not represent the frequency or full diversity of real n8n failures.
-- Some cases use simplified workflow JSON fixtures and omit unrelated n8n metadata.
-- A gold-patch match is strict and can penalize a different valid repair.
-- Patch applicability is a structural JSON fixture check, not a live n8n execution test.
-- A 1.7B adapter is not a substitute for current node documentation, execution data, or human review.
-- The Colab run builds a runtime BM25 index from official docs listed in ../knowledge/sources.yaml. Retrieved context is used during base/fine-tuned evaluation, not included as fine-tuning examples.
+## Coverage and provenance
+
+Expressions, data mapping, item linking, node configuration, workflow structure, Code node behavior, execution/API errors, and credentials/security. Examples are synthetic and contain no customer workflow exports, production records or real secrets. New examples vary node names, payloads, observed errors and workflow graphs around a documented root-cause taxonomy.
+
+## Retrieval and training
+
+The Colab notebook retrieves official n8n documentation for train, validation and evaluation prompts using the same local BM25 index and augmentation settings. Retrieved excerpts are runtime context, not memorized fine-tuning records. The notebook validates actual tokenized lengths before training.
+
+## Limitations
+
+- Synthetic test cases cannot represent the full distribution of production n8n failures.
+- Patch applicability checks JSON Patch application and workflow graph structure; it does not execute a live n8n workflow.
+- Gold-patch match is strict and may penalize alternative valid patches.
+- 100% scores on this benchmark are not a guarantee of production reliability.
+- External outages, credential problems and ambiguous item lineage require human review.
 
 ## Safety
-Credential and secret cases abstain. The model must never invent, reveal, or modify secret values. Do not automatically apply model-generated patches to a production workflow.
+
+Credential examples abstain. Do not commit workflow exports containing credentials, tokens, customer data or private URLs. Never automatically apply model-generated patches to production workflows.
