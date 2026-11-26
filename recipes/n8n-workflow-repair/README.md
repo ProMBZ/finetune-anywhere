@@ -1,77 +1,43 @@
 # n8n workflow diagnosis and repair
 
-Fine-tune the starter repository's Qwen3 1.7B text model to diagnose n8n workflow failures and return minimal, structured repair proposals.
+Fine-tune Qwen3-1.7B with the starter repository's Unsloth QLoRA Colab pipeline to classify n8n failures, identify root causes and propose minimal JSON Patch repairs.
 
-This recipe reuses the starter repository's Unsloth Colab pipeline, validation, base-versus-fine-tuned evaluation, evidence capture and GGUF Q4_K_M export. It does not replace the starter infrastructure.
+## Dataset v0.3
 
-## Task
+| Split | Cases | Per category |
+|---|---:|---:|
+| Training | 640 | 80 |
+| Validation | 128 | 16 |
+| Held-out evaluation | 192 | 24 |
+| **Total** | **960** | |
 
-The model receives a compact JSON case containing:
-- an n8n workflow excerpt (nodes, parameters and connections),
-- the observed execution error,
-- representative input data when available,
-- the intended behavior,
-- version or documentation context when available.
+Eight categories are covered: expression, data_mapping, item_linking, node_configuration, workflow_structure, code_node, execution_api, credentials.
 
-It returns exactly one JSON object with:
-- category and diagnosis_code,
-- faulty_node and root_cause,
-- a minimal JSON Patch-style patch,
-- needs_human_review.
+There are 48 canonical diagnosis codes (six per category). The codebook is in `data/diagnosis-codes.json`; every prompt constrains the model to this vocabulary. v0.2 contained inconsistent near-synonymous labels such as `AMBIGUOUS_ITEM_LINK` and `AMBIGUOUS_ITEM_LINKING`, which made exact code scoring unnecessarily noisy.
 
-The eight categories are expressions, data mapping, item linking, node configuration, workflow structure, Code node output, execution/API failures, and credentials/security.
+The training split is balanced at 80 cases per category. It retains 200 v0.2 training cases and 50 former validation cases after normalizing their diagnosis labels, plus 390 newly authored synthetic examples. Validation and evaluation are new. The held-out evaluation split contains 192 cases: 24 per category and four per diagnosis code. The original v0.2 evaluation set is archived unchanged at `data/archive/eval-v0.2.jsonl` and is not used for v0.3 training.
 
-## Dataset v0.2
+## Evaluation improvements
 
-The recipe now contains **300 synthetic cases**:
+- Diagnosis-code output is checked against the controlled category-specific codebook.
+- Per-category totals include malformed model outputs as incorrect, rather than silently omitting them.
+- The report includes codebook validity, exact diagnosis-code accuracy, macro per-code accuracy, accuracy conditional on correct category, per-code results and a confusion matrix.
+- Patch applicability remains a structural JSON fixture check only, not a live n8n execution test.
+- The same retrieved official documentation excerpts are supplied to training, validation and evaluation prompts to avoid a documentation-context mismatch.
+- Best adapter checkpoint is selected by validation loss.
 
-| Split | Cases | Purpose |
-|---|---:|---|
-| Training | 200 | Adapter training |
-| Validation | 50 | Validation loss and checkpoint selection |
-| Held-out evaluation | 50 | Base-versus-fine-tuned comparison |
-| **Total** | **300** | |
+## Fine-tuning configuration
 
-The training split is balanced at 25 cases per category. Validation and evaluation also cover all eight categories. The original 10 held-out cases remain in the evaluation split; the added 40 cases broaden coverage.
+Qwen3-1.7B; 4-bit QLoRA; LoRA rank 16 / alpha 32; learning rate 5e-5; four epochs; 2048-token context; batch size 1 with gradient accumulation 8. The notebook validates actual token lengths before training and reduces retrieval excerpts if necessary.
 
-The examples include expression references and syntax, nested and typed data mapping, item linking and pairedItem, HTTP Request and Wait settings, missing or misrouted workflow connections, Merge inputs, Code node item shape/pairing, API rate limits and payload validation, external outages, and credential-related abstention.
+## Scope and limitations
 
-Run the recipe validator before training:
+The model proposes patches; it never applies them to a production workflow. Credential cases, external outages and missing item lineage require abstention. Structural patch applicability does not prove successful live execution. Synthetic data is useful for controlled iteration but cannot guarantee 100% real-world accuracy. A separate real-workflow test set is still required.
 
-```bash
-python scripts/validate_n8n_dataset.py
-```
+## Colab
 
-Keep data/eval.jsonl untouched. Do not move evaluation cases into training or repeatedly tune against their expected answers.
+[Open the updated n8n repair Colab notebook](https://colab.research.google.com/github/ProMBZ/finetune-anywhere/blob/project-01-n8n-workflow-repair/paths/colab/n8n-workflow-repair.ipynb).
 
-## Important scope and safety
+Select a T4 GPU when available, then run the notebook top to bottom. It validates the dataset, checks project tests, fetches official n8n documentation, applies the same retrieval step to all splits, scores the base model, fine-tunes Qwen3, and evaluates all 192 held-out prompts. GGUF/Ollama export is intentionally disabled.
 
-This is a focused competition prototype, not a claim to repair every n8n workflow. Examples are synthetic and deliberately compact. The benchmark checks structured diagnosis, agreement with one authored reference, and whether proposed patches apply to the fixture. A structurally applicable patch is **not** proof that it executes successfully in a live n8n instance.
-
-Credential and secret cases must abstain. Ambiguous item linking and external infrastructure failures must not trigger guessed edits. Never commit real workflow exports containing credentials, tokens, customer data or private URLs. Do not automatically apply patches to production workflows.
-
-The Colab notebook now fetches the official Markdown sources listed in knowledge/sources.yaml, records successes/failures, chunks the pages, and builds a lightweight local BM25 retrieval index. Retrieved excerpts are passed to both the base and fine-tuned models on the same evaluation prompts. This knowledge is retrieved at inference/evaluation time; it is **not** part of the fine-tuning dataset and is not memorised by the adapter. The docs manifest is included in the run evidence ZIP.
-
-## Train and compare in Colab
-
-[Open the prepared n8n repair Colab notebook](https://colab.research.google.com/github/ProMBZ/finetune-anywhere/blob/project-01-n8n-workflow-repair/paths/colab/n8n-workflow-repair.ipynb).
-
-Select a T4 GPU when available, then run the notebook from top to bottom. It clones this fork and the project branch, not the organizer's upstream main branch. It uses:
-- base model alias: starter (Qwen3-1.7B),
-- Unsloth 4-bit base weights with LoRA adapters,
-- the recipe's pinned configuration,
-- the same 50 held-out prompts, retrieved official-doc excerpts and generation settings for the base and fine-tuned model,
-- per-category scoring and safety checks,
-- adapter/evidence saving and GGUF Q4_K_M export.
-
-The base outputs are generated **before training**; the fine-tuned outputs are generated after training. The comparison is therefore paired on identical held-out cases.
-
-## Evaluation
-
-The notebook reports JSON validity, schema validity, category and diagnosis accuracy, gold-patch match, safe-abstention accuracy, patch applicability, and safety violations.
-
-Gold-patch match is intentionally strict: a different but valid repair may be marked incorrect. Patch applicability is only a structural fixture check. Neither metric is a live n8n execution test.
-
-## License and provenance
-
-All examples in this recipe are original synthetic cases created for this project and released under the repository's MIT license. They are not copied from customer workflows or production exports.
+Keep `eval.jsonl` untouched. Do not train against the held-out references or tune repeatedly against individual test misses.
