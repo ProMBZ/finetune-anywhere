@@ -50,7 +50,7 @@ This is a focused competition prototype, not a claim to repair every n8n workflo
 
 Credential and secret cases must abstain. Ambiguous item linking and external infrastructure failures must not trigger guessed edits. Never commit real workflow exports containing credentials, tokens, customer data or private URLs. Do not automatically apply patches to production workflows.
 
-The files in knowledge/sources.yaml identify official n8n documentation and source-code references for a future version-aware retrieval layer. They are source pointers, not a claim that a complete RAG index is already wired into this fine-tuning run.
+The Colab notebook now fetches the official Markdown sources listed in knowledge/sources.yaml, records successes/failures, chunks the pages, and builds a lightweight local BM25 retrieval index. Retrieved excerpts are passed to both the base and fine-tuned models on the same evaluation prompts. This knowledge is retrieved at inference/evaluation time; it is **not** part of the fine-tuning dataset and is not memorised by the adapter. The docs manifest is included in the run evidence ZIP.
 
 ## Train and compare in Colab
 
@@ -60,7 +60,7 @@ Select a T4 GPU when available, then run the notebook from top to bottom. It clo
 - base model alias: starter (Qwen3-1.7B),
 - Unsloth 4-bit base weights with LoRA adapters,
 - the recipe's pinned configuration,
-- the same 50 held-out prompts and generation settings for the base and fine-tuned model,
+- the same 50 held-out prompts, retrieved official-doc excerpts and generation settings for the base and fine-tuned model,
 - per-category scoring and safety checks,
 - adapter/evidence saving and GGUF Q4_K_M export.
 
