@@ -37,7 +37,7 @@ Keep the evaluation split untouched until final scoring. Review every example an
 
 ## Train in Colab
 
-Open the project notebook at `paths/colab/n8n-workflow-repair.ipynb`. Select a T4 GPU when available and run the cells in order. The notebook uses:
+[Open the prepared n8n repair Colab notebook](https://colab.research.google.com/github/ProMBZ/finetune-anywhere/blob/project-01-n8n-workflow-repair/paths/colab/n8n-workflow-repair.ipynb). Select a T4 GPU when available and run the cells in order. The notebook clones this fork and the project branch, not the organizer's upstream main branch. The notebook uses:
 - base model alias: `starter` (Qwen3-1.7B),
 - Unsloth 4-bit loading and LoRA adapters,
 - the recipe's pinned configuration,
