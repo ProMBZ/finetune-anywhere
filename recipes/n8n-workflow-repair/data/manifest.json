@@ -1,7 +1,7 @@
 {
   "name": "n8n workflow diagnosis and repair dataset",
   "version": "0.3.0",
-  "provenance": "Original synthetic diagnostic cases. The existing v0.2 training and validation records were retained with diagnosis labels normalized into this controlled taxonomy; additional cases were authored from curated code-specific scenarios with varied node names, payloads, errors, and workflow structures. No customer workflows, secrets, production exports or copied user records are included.",
+  "provenance": "Original synthetic diagnostic cases. The v0.2 training and former-validation examples were reviewed, diagnosis labels normalized, three mislabeled examples replaced, and additional cases authored for the controlled taxonomy. No customer workflows, secrets, production exports or copied user records are included.",
   "license": "MIT (repository license)",
   "format": "JSONL chat messages: system, user, assistant",
   "counts": {
@@ -59,21 +59,14 @@
     }
   },
   "design": {
-    "training": "640 examples, balanced to 80 per category and codebook-driven canonical diagnosis labels. Includes the 200 v0.2 train cases and 50 former validation cases after diagnosis-code normalization, plus 390 new cases.",
+    "training": "640 examples balanced to 80 per category. This split contains 197 retained v0.2 training examples, 50 former v0.2 validation examples after diagnosis-label normalization, and 393 new or replacement synthetic cases.",
     "validation": "128 newly authored cases, 16 per category, separate from training.",
     "evaluation": "192 newly authored cases, 24 per category and four per canonical diagnosis code. This set is separate from all training and validation examples. Keep it untouched.",
     "diagnosis_codes": "48 canonical labels: six per category, explicitly listed in diagnosis-codes.json and in the system instruction.",
     "retrieval": "The same retrieved official documentation is provided to training, validation, and evaluation prompts to avoid a train/evaluation context mismatch.",
     "safety": "Credentials and secrets always abstain. External outages and ambiguous item lineage abstain unless supplied evidence supports a safe, minimal correction.",
-    "limits": "Synthetic benchmark; not representative of all real n8n failures. Patch applicability checks the JSON fixture and workflow graph only; it does not execute n8n. A gold-patch match is strict and may penalize alternative valid repairs."
+    "limits": "Synthetic benchmark; not representative of all real n8n failures. Patch applicability checks the JSON fixture and workflow graph only; it does not execute n8n. A gold-patch match is strict and may penalize alternative valid repairs.",
+    "item_linking": "A missing paired-item link can be repaired with .first() only when the prompt explicitly proves there is exactly one upstream item. Otherwise it must abstain and request human review."
   },
-  "validation": {
-    "jsonl_schema": "Each record has exactly system, user, assistant messages.",
-    "unique_case_ids": true,
-    "unique_prompts": true,
-    "category_balance": "80/16/24 per category across train/valid/eval.",
-    "code_balance": "All 48 canonical codes appear in all three splits.",
-    "secret_safety": "No patch writes to credentials or secret paths.",
-    "patch_application": "All non-empty reference patches apply to their synthetic workflow fixtures and produce sound node connections."
-  }
+  "validation": "128 newly authored cases, 16 per category, separate from training."
 }
