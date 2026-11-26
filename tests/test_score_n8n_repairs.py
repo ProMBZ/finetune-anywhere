@@ -58,3 +58,12 @@ def test_score_outputs_uses_full_denominators_and_codebook_metrics():
     assert scores["diagnosis_code_validity"]=="100.0% (1/1)"
     assert scores["by_category"]["credentials"]["total"]==1
     assert scores["by_category"]["credentials"]["category_correct"]==0
+
+
+def test_singleton_item_lineage_can_use_first_when_evidence_proves_one_result():
+    valid = response(
+        "item_linking",
+        "ITEM_LINEAGE_UNAVAILABLE",
+        [{"op": "replace", "path": "/nodes/1/parameters/value", "value": "={{ $('Lookup').first().json.value }}"}],
+    )
+    assert schema_errors(valid) == []
