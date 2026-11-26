@@ -13,7 +13,7 @@ Fine-tune Qwen3-1.7B with the starter repository's Unsloth QLoRA Colab pipeline 
 
 Eight categories are covered: expression, data_mapping, item_linking, node_configuration, workflow_structure, code_node, execution_api, credentials.
 
-There are 48 canonical diagnosis codes (six per category). The codebook is in `data/diagnosis-codes.json`; every prompt constrains the model to this vocabulary. v0.2 contained inconsistent near-synonymous labels such as `AMBIGUOUS_ITEM_LINK` and `AMBIGUOUS_ITEM_LINKING`, which made exact code scoring unnecessarily noisy.
+There are 48 canonical diagnosis codes (six per category). The codebook is in `data/diagnosis-codes.json`; Colab adds its concise code definitions to the shared system prompt for train, validation and evaluation. v0.2 contained inconsistent near-synonymous labels such as `AMBIGUOUS_ITEM_LINK` and `AMBIGUOUS_ITEM_LINKING`, which made exact code scoring unnecessarily noisy.
 
 The training split is balanced at 80 cases per category. It retains 200 v0.2 training cases and 50 former validation cases after normalizing their diagnosis labels, plus 390 newly authored synthetic examples. Validation and evaluation are new. The held-out evaluation split contains 192 cases: 24 per category and four per diagnosis code. Its scenario templates are separate from those used in training. The original v0.2 evaluation set is archived unchanged at `data/archive/eval-v0.2.jsonl` and is not used for v0.3 training.
 
