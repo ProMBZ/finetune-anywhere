@@ -31,8 +31,8 @@ def parse_json_object(text: str) -> dict[str, Any] | None:
     if not isinstance(text, str):
         return None
     candidate = text.strip()
-    candidate = re.sub(r"^\`\`\`(?:json)?\s*", "", candidate, flags=re.IGNORECASE)
-    candidate = re.sub(r"\s*\`\`\`$", "", candidate)
+    candidate = re.sub(r"^\x60{3}(?:json)?\s*", "", candidate, flags=re.IGNORECASE)
+    candidate = re.sub(r"\s*\x60{3}$", "", candidate)
     start = candidate.find("{")
     if start < 0:
         return None
