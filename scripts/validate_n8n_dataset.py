@@ -40,6 +40,7 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
     manifest=json.loads((root/"manifest.json").read_text(encoding="utf-8"))
     expected=manifest.get("counts",{})
     expected_distribution=manifest.get("distribution",{})
+    expected_code_distribution=manifest.get("code_distribution",{})
     seen_prompts=set(); seen_ids=set()
     report={"counts":{},"categories":{},"codes":{},"patches_checked":0}
     errors=[]
@@ -115,6 +116,8 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
         report["codes"][split]=dict(sorted(code_counts.items()))
         desired=expected_distribution.get(split,{})
         if desired and dict(category_counts)!=desired: errors.append(f"{split}: category distribution differs from manifest")
+        desired_codes=expected_code_distribution.get(split,{})
+        if desired_codes and dict(code_counts)!=desired_codes: errors.append(f"{split}: diagnosis-code distribution differs from manifest")
         missing=[code for values in CODES_BY_CATEGORY.values() for code in values if not code_counts[code]]
         if missing: errors.append(f"{split}: missing diagnosis codes: {', '.join(missing)}")
     if expected.get("total")!=sum(report["counts"].values()): errors.append("manifest total mismatch")
