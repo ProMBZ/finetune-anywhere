@@ -14,6 +14,7 @@ def test_complete_v03_recipe_dataset_is_valid():
     assert report["canonical_diagnosis_codes"]==48
     assert report["patches_checked"]>0
     assert all(report["codes"][split] for split in ("train","valid","eval"))
+    assert all(len(report["codes"][split]) == 48 for split in ("train","valid","eval"))
 
 def test_retry_settings_are_top_level_node_properties():
     good={"nodes":[{"name":"HTTP","parameters":{"url":"https://api.example.test"},
