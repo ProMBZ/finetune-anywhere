@@ -1,49 +1,66 @@
 # n8n workflow diagnosis and repair
 
-Fine-tune Qwen3-1.7B to classify n8n failures, identify evidence-supported root causes and propose minimal JSON Patch repairs.
+Fine-tune Qwen3-1.7B to classify n8n workflow failures, identify evidence-supported root causes and propose minimal JSON Patch repairs.
 
-## Dataset v0.6 training and evaluation
+## Dataset v0.7 training and evaluation
 
-The v0.4 source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. v0.5/v0.6 add **540 independently authored synthetic training scenarios** across all eight categories. Data mapping receives 144 new cases; item linking and Code-node behavior receive 72 each; node configuration receives 78 and execution/API failures receive 66; expression, workflow structure and credentials receive 36 each. Colab audits legacy label collisions, retains the 1,180 source training cases and balances the result to **2,304 training examples (48 per diagnosis code)**. Deterministic variants are generated only to fill remaining per-code slots and are not independent incidents.
+The v0.4 source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. v0.5/v0.6/v0.7 add **888 independently authored synthetic training scenarios** across the eight canonical categories.
 
-| Prepared split | Examples | Distribution |
+| Category | Authored supplemental cases |
+|---|---:|
+| Data mapping | 228 |
+| Item linking | 144 |
+| Node configuration | 126 |
+| Code node | 108 |
+| Execution API | 102 |
+| Expression | 60 |
+| Workflow structure | 60 |
+| Credentials | 60 |
+| **Total** | **888** |
+
+The v0.7 increment contributes 348 cases: 84 mapping, 72 linking, 48 node configuration, 36 Code-node, 36 execution/API, 24 expression, 24 workflow-structure and 24 credential-safety cases. The additional 24 v0.7 validation-only examples focus on mapping and item-linking diagnosis boundaries.
+
+The authored source pool is 1,528 examples (640 original + 888 supplemental). Colab balances the 48 diagnosis codes to **3,072 training examples (64 per code)**. Remaining slots are filled by deterministic, controlled variants. Those variants preserve their source labels and patches; they are not independent incidents. The prepared split is:
+
+| Split | Cases | Notes |
 |---|---:|---|
-| Training | 2,304 | 48 per code; 288 per category |
-| Validation | 132 | 128 base cases plus 2 timeout-abstention and 2 paired-item index cases |
-| Held-out evaluation | 192 | 24 per category; 4 per code |
-| Legacy prepared total | 2,628 | Training + validation + original held-out evaluation |
+| Training | 3,072 | 64 per diagnosis code; 384 per category |
+| Validation | 156 | 128 original + 4 v0.6 + 24 v0.7 validation-only cases |
+| Original held-out evaluation | 192 | 24 per category; 4 per diagnosis code |
+| **Prepared total** | **3,420** | Training + validation + original held-out evaluation |
 
-There are 48 canonical diagnosis codes, six per category, described in `data/diagnosis-codes.json`.
+The separate `challenge-eval-v0.6.jsonl` contains 48 fresh synthetic cases, one per canonical diagnosis code. It remains outside training and validation.
 
-## Critical v0.3 benchmark issue fixed
+## What v0.7 is designed to improve
 
-Earlier validation/evaluation `case_id` values contained their target category and diagnosis-code labels. Because the ID is part of the user prompt, that leaked the expected answer. v0.4 uses opaque IDs and the validator rejects identifiers containing category/code names. It also checks prompt uniqueness after removing the ID field.
+- **Data mapping:** absent/null versus nested-path mismatch; zero-based array index errors; local type conversion; preserving valid `0`, `false` and empty-string values with nullish fallbacks; textual boolean parsing.
+- **Item linking:** missing `pairedItem` metadata versus incorrect source indexes; wrong first/last selection under explicit ordering; wrong upstream node; all-items versus first-item mistakes; ambiguity versus irrecoverably lost lineage.
+- **Node configuration and API:** request method/body/response-format, timeout units and SLA evidence, wait durations, bounded 429 retries, external payload field/type contracts, provider outages and network failures.
+- **Code nodes and workflow graphs:** n8n output item shape, execution mode, undefined variables, preserved source indexes, missing/invalid connections, IF branch routing and Merge inputs.
+- **Safety:** credentials, secrets, unresolved item lineage, confirmed outages, network-layer faults and unexplained runtime timeouts should abstain rather than invent a patch.
 
-## Training augmentation
+This is a deliberate increase in reasoning-pattern diversity, not a claim that simply adding more rows guarantees accuracy.
 
-v0.6 retains all original source cases, adds 540 train-only scenarios and corrects audited label collisions in training/validation. In particular, a value at a different nested path is not labelled missing; missing pairedItem metadata is distinguished from an incorrect pairedItem index; and an unexplained request timeout is taught as a safe abstention rather than a guessed timeout increase. Four additional validation cases teach two boundaries: unexplained timeouts must abstain, and incorrect pairedItem indexes must be corrected without confusing them with missing metadata.
+## Benchmark integrity and limitations
 
-The pipeline fills remaining per-code slots with controlled node-renaming and safe identifier/domain variations, then deterministically shuffles the training rows. These variants preserve their source label and patch; they are not independent incidents. The original 192-case held-out evaluation is not modified. A separate **48-case challenge evaluation** has one fresh synthetic case per diagnosis code and is never used for training or validation.
-
-## Evaluation
-
-- Malformed outputs count as wrong in full metric denominators.
-- Diagnosis-code reporting includes exact accuracy, macro per-code accuracy, code validity, conditional accuracy, per-code counts and a confusion matrix.
-- Human-review decision agreement is separated from safe-abstention precision and recall.
-- Gold-patch match is strict and can penalize alternative valid repairs.
-- Patch applicability checks JSON Patch against synthetic fixtures; it does not prove execution inside n8n.
-- Both base and fine-tuned models receive the same retrieved documentation excerpts and generation settings. The separate challenge set has one case per diagnosis code, so it is a broad smoke test, not a precise category-level statistical estimate.
-
-The notebook uses TRL 0.22.2's conversational prompt/completion format with `completion_only_loss=True`, so loss is applied to assistant diagnosis/repair targets without relying on assistant-token masks in Qwen3's stock chat template. The best adapter checkpoint is selected by validation loss.
+- The original `data/eval.jsonl` is preserved byte-for-byte and is not used for training or validation.
+- The separate 48-case challenge set is also held out.
+- Dataset preparation checks opaque case IDs, canonical diagnosis codes, exact prompt duplicates and cross-split prompt fingerprints.
+- JSON Patch applicability is checked against synthetic workflow fixtures. It does **not** prove execution inside a live n8n instance.
+- All authored additions are synthetic. There is no production incident corpus in this dataset.
+- The legacy evaluation has only four cases per diagnosis code. Scores at category/code level are noisy; 90% is a target to test, not a guaranteed outcome.
+- Strict gold-patch match can penalize an alternative valid repair. Review it alongside diagnosis accuracy, patch applicability and safe-abstention metrics.
 
 ## Fine-tuning configuration
 
-Qwen3-1.7B; 4-bit QLoRA; LoRA rank 16 / alpha 32; learning rate 1.5e-5; two epochs; 2048-token context; batch size 1 with gradient accumulation 8 (576 optimizer steps). The best checkpoint is selected by validation loss. GGUF/Ollama export and download remain disabled.
+Qwen3-1.7B, 4-bit QLoRA, LoRA rank 16 / alpha 32, **learning rate 1.0e-5**, two epochs, 2,048-token context, batch size 1 and gradient accumulation 8. The prepared 3,072-row training split means **768 planned optimizer steps**. Validation and checkpoint saves occur every 128 steps; the best checkpoint is selected by validation loss. This is intentionally more conservative than the earlier 1.5e-5 run after the observed validation-loss increase.
+
+Training uses TRL 0.22.2 conversational prompt/completion data with `completion_only_loss=True`. GGUF/Ollama export and model download remain disabled until adapter quality is accepted.
 
 ## Colab
 
-[Open the updated n8n repair Colab notebook](https://colab.research.google.com/github/ProMBZ/finetune-anywhere/blob/project-01-n8n-workflow-repair/paths/colab/n8n-workflow-repair.ipynb).
+[Open the Qwen n8n Workflow Repair v0.7 Colab notebook](https://colab.research.google.com/github/ProMBZ/finetune-anywhere/blob/project-01-n8n-workflow-repair/paths/colab/n8n-workflow-repair.ipynb).
 
-Select a T4 GPU when available and run top to bottom. It prepares the balanced dataset, validates patches, runs project tests, fetches official n8n documentation, scores the base model, fine-tunes Qwen3 and evaluates the original 192 held-out prompts and the separate 48-case challenge set. The evidence ZIP records data preparation, label corrections, source hashes, settings and complete base/fine-tuned outputs for both evaluations.
+Select a T4 GPU when available and run from a **fresh runtime**, top to bottom. Step 8 prepares the v0.7 data, checks tokenizer lengths, validates the prepared recipe and runs the project tests before any GPU training. The notebook then evaluates the base model, trains the adapter, evaluates the original 192 held-out cases and the separate 48-case challenge set, and saves the adapter and full evidence. Review the validation curve and all category/code confusion before deciding whether the model is submission-ready.
 
-Keep `eval.jsonl` untouched. Do not train against held-out references or tune repeatedly against individual test misses.
+Keep both held-out evaluation sets untouched. Do not tune repeatedly against individual test misses.

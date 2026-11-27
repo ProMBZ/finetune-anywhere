@@ -1,6 +1,6 @@
 # Work and testing report
 
-Updated: 21 November 2026. Ready to share as a hackathon starter repository, with Colab and the JSON extractor as the demonstrated first path.
+Updated: 27 November 2026. Ready to share as a hackathon starter repository, with Colab and the JSON extractor as the demonstrated first path.
 
 ## Work completed
 
@@ -40,3 +40,7 @@ These scores describe ten held-out synthetic examples. Exported GGUF inference, 
 ## Participant route
 
 [Open Colab instructions](paths/colab/) → run the default JSON extractor → download evidence and GGUF → test locally → train on your own data → [submit your project](showcase/qwen-local-hackathon-2026/).
+
+## Qwen n8n workflow repair v0.7 candidate
+
+The feature branch preserves the v0.4 source corpus and original 192-case held-out evaluation while adding 348 synthetic v0.7 training cases across the eight diagnosis categories and 24 separate validation-only mapping/item-linking cases. Combined v0.5-v0.7 supplements contribute 888 authored training examples. The preparation pipeline balances 48 codes to 64 examples each (3,072 training rows), uses 156 validation rows and keeps the separate 48-case challenge set held out. This is a training candidate, not a validated model release: no v0.7 GPU run or quality score is claimed before the fresh Colab run and saved evidence.

@@ -109,7 +109,7 @@ def test_step_8_replaces_duplicate_taxonomy_instead_of_appending_it():
     assert "Combined system instruction characters:" in dataset
 
 
-def test_notebook_uses_v06_dataset_and_independent_challenge_evaluation():
+def test_notebook_uses_v07_dataset_and_independent_challenge_evaluation():
     book = notebook()
     dataset = cell_text(book, 16)
     report = next(
@@ -119,9 +119,9 @@ def test_notebook_uses_v06_dataset_and_independent_challenge_evaluation():
     )
     config = (ROOT / "recipes/n8n-workflow-repair/config.yaml").read_text(encoding="utf-8")
 
-    assert "prepared-dataset-v0.6" in dataset
-    assert "train_per_code=48" in dataset
-    assert "learning_rate: 0.000015" in config
+    assert "prepared-dataset-v0.7" in dataset
+    assert "train_per_code=64" in dataset
+    assert "learning_rate: 0.00001" in config
     assert "epochs: 2" in config
     assert "'training_data_version': preparation_report['version']" in report
     assert "'supplemental_train_sha256'" in report
@@ -133,4 +133,9 @@ def test_notebook_uses_v06_dataset_and_independent_challenge_evaluation():
     assert "raw['challenge_eval'] = challenge_rows" in dataset
     assert "challenge_eval_prompts" in dataset
     assert "'challenge_eval_base_scores'" in report
+    assert "eval_steps=128" in cell_text(book, 20)
+    assert "save_steps=128" in cell_text(book, 20)
+    assert "supplemental-train-v0.7-mapping.jsonl" in report
+    assert "supplemental-valid-v0.7.jsonl" in report
+    assert "best_validation_loss" in report
 

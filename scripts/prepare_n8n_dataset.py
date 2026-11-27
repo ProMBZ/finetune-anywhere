@@ -9,7 +9,7 @@ from score_n8n_repairs import CODES_BY_CATEGORY
 PEOPLE={"Ari":"Riley","Bo":"Casey","Ria":"Jordan","Sam":"Taylor","Mina":"Morgan","Joe":"Avery","Ana":"Quinn","Lee":"Rowan"}
 
 def _opaque_id(split: str, ordinal: int, origin: str, variant: int=0) -> str:
-    raw=f"n8n-repair-v0.6|{split}|{ordinal}|{origin}|{variant}".encode()
+    raw=f"n8n-repair-v0.7|{split}|{ordinal}|{origin}|{variant}".encode()
     return "case-"+hashlib.sha256(raw).hexdigest()[:16]
 
 def _rewrite_tree(value: Any, replacements: dict[str,str]) -> Any:
@@ -253,7 +253,7 @@ def _normalise_legacy_labels(rows: list[dict[str, Any]], split: str) -> tuple[li
     return output, corrections
 
 
-def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: int=48) -> dict[str,Any]:
+def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: int=64) -> dict[str,Any]:
     if train_per_code<18: raise ValueError("train_per_code must be at least 18")
     source,out=Path(source_dir),Path(output_dir)
     if out.exists() and any(out.iterdir()): raise FileExistsError(f"output directory is not empty: {out}")
@@ -262,14 +262,20 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     allowed={entry["code"] for entries in taxonomy["categories"].values() for entry in entries}
     if allowed!={code for codes in CODES_BY_CATEGORY.values() for code in codes}: raise ValueError("taxonomy differs from scorer codebook")
     base_train,valid,evaluation=(_read(source/f"{name}.jsonl") for name in ("train","valid","eval"))
-    supplemental_valid_path=source/"supplemental-valid-v0.6.jsonl"
-    supplemental_valid=_read(supplemental_valid_path) if supplemental_valid_path.exists() else []
-    for index,row in enumerate(supplemental_valid,1):
-        messages=row.get("messages")
-        if not isinstance(messages,list) or len(messages)!=3:
-            raise ValueError(f"{supplemental_valid_path.name}:{index}: expected three chat messages")
-        if [message.get("role") for message in messages]!=["system","user","assistant"]:
-            raise ValueError(f"{supplemental_valid_path.name}:{index}: roles must be system, user, assistant")
+    supplemental_valid_names=["supplemental-valid-v0.6.jsonl", "supplemental-valid-v0.7.jsonl"]
+    supplemental_valid_files=[source/name for name in supplemental_valid_names if (source/name).exists()]
+    supplemental_valid=[]
+    for path in supplemental_valid_files:
+        loaded=_read(path)
+        for index,row in enumerate(loaded,1):
+            messages=row.get("messages")
+            if not isinstance(messages,list) or len(messages)!=3:
+                raise ValueError(f"{path.name}:{index}: expected three chat messages")
+            if [message.get("role") for message in messages]!=["system","user","assistant"]:
+                raise ValueError(f"{path.name}:{index}: roles must be system, user, assistant")
+            if not all(isinstance(message.get("content"),str) for message in messages):
+                raise ValueError(f"{path.name}:{index}: message content must be text")
+        supplemental_valid.extend(loaded)
     valid=valid+supplemental_valid
     supplemental_names=[
         "supplemental-train-v0.5.jsonl",
@@ -281,6 +287,14 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
         "supplemental-train-v0.6-expression.jsonl",
         "supplemental-train-v0.6-workflow.jsonl",
         "supplemental-train-v0.6-credentials.jsonl",
+        "supplemental-train-v0.7-mapping.jsonl",
+        "supplemental-train-v0.7-linking.jsonl",
+        "supplemental-train-v0.7-node-config.jsonl",
+        "supplemental-train-v0.7-code.jsonl",
+        "supplemental-train-v0.7-api.jsonl",
+        "supplemental-train-v0.7-expression.jsonl",
+        "supplemental-train-v0.7-workflow.jsonl",
+        "supplemental-train-v0.7-credentials.jsonl",
     ]
     supplemental_files=[source/name for name in supplemental_names if (source/name).exists()]
     supplemental=[]
@@ -340,14 +354,14 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     if set(code_distribution["train"].values())!={train_per_code}: raise AssertionError("training code counts are not balanced")
     source_manifest=json.loads((source/"manifest.json").read_text(encoding="utf-8"))
     total=sum(len(rows) for rows in splits.values())
-    manifest={"name":"n8n workflow diagnosis and repair dataset","version":"0.6.0-prepared",
-      "provenance":"v0.4 source corpus plus independently authored v0.5/v0.6 supplemental synthetic training scenarios. Audited label collisions are corrected in train/validation; legacy held-out evaluation is left unchanged. Deterministic augmentation is applied only to training.",
+    manifest={"name":"n8n workflow diagnosis and repair dataset","version":"0.7.0-prepared",
+      "provenance":"v0.4 source corpus plus independently authored v0.5/v0.6/v0.7 supplemental synthetic training scenarios. v0.7 expands reasoning diversity in data mapping, item linking and adjacent weak categories. Audited label collisions are corrected in train/validation; legacy held-out evaluation is unchanged. Deterministic variants only fill remaining training-code slots.",
       "license":source_manifest.get("license","MIT (repository license)"),"format":"JSONL chat messages: system, user, assistant",
       "counts":{"train":len(prepared_train),"valid":len(prepared_valid),"eval":len(prepared_eval),"total":total},
       "categories":sorted(CODES_BY_CATEGORY),"diagnosis_code_taxonomy":"diagnosis-codes.json",
       "distribution":distribution,"code_distribution":code_distribution,
       "label_normalization":{"corrections":dict(sorted(normalisation_report.items())),"scope":["train","supplemental_train","valid","supplemental_valid"],"heldout_eval_modified":False},
-      "supplemental_validation":{"file":supplemental_valid_path.name if supplemental_valid else None,"cases":len(supplemental_valid),"validation_only":True},
+      "supplemental_validation":{"files":[path.name for path in supplemental_valid_files],"cases":len(supplemental_valid),"validation_only":True},
       "supplemental_training":{"files":[path.name for path in supplemental_files],
        "base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),
        "supplemental_cases_are_synthetic":True,"supplemental_cases_are_train_only":True},
@@ -364,7 +378,7 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     (out/"diagnosis-codes.json").write_text(json.dumps(taxonomy,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     (out/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     (out/"DATASET_CARD.md").write_text(
-        f"# Prepared dataset v0.6\n\n"
+        f"# Prepared dataset v0.7\n\n"
         f"- Base source training cases: {len(base_train)}\n"
         f"- Supplemental authored training cases: {len(supplemental)}\n"
         f"- Prepared training: {len(prepared_train)} ({train_per_code} per code)\n"
@@ -373,7 +387,7 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
         f"- Generated training variants: {generated}\n"
         f"- Label corrections: {dict(sorted(normalisation_report.items()))}\n\n"
         "Training variants are not independent incidents. Synthetic supplemental examples are train-only. "
-        "Validation-only timeout cases are separate from training. The legacy held-out evaluation remains unchanged.\n",
+        "Validation-only mapping and item-linking cases are separate from training. The legacy held-out evaluation remains unchanged.\n",
         encoding="utf-8",
     )
     if (source/"archive").exists():
@@ -395,5 +409,5 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
 
 
 if __name__=="__main__":
-    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=48)
+    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=64)
     args=parser.parse_args(); print(json.dumps(prepare_dataset(args.source_dir,args.output_dir,args.train_per_code),indent=2))

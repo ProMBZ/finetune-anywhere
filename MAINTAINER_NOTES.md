@@ -1,5 +1,13 @@
 # Maintainer notes
 
+## Qwen n8n repair dataset v0.7
+
+Prepared as a new training candidate on 27 November 2026. The original v0.4 source corpus (640 train / 128 validation / 192 held-out evaluation) remains intact. v0.5/v0.6 contributed 540 supplemental synthetic training cases; v0.7 adds 348 more across all eight categories (84 mapping, 72 item linking, 48 node configuration, 36 Code node, 36 execution/API, 24 expression, 24 workflow structure and 24 credential-safety cases). The v0.7 validation-only supplement adds 24 mapping/linking cases. The pipeline balances the 1,528 authored synthetic training scenarios to 64 examples per code (3,072 total), creating 1,544 controlled fill variants. Those variants are not independent incidents.
+
+Prepared validation has 156 cases (128 original + 4 v0.6 + 24 v0.7). The original 192-case evaluation and separate 48-case challenge evaluation remain outside training. QLoRA remains rank 16 / alpha 32, with learning rate 1e-5, two epochs, 2,048-token context and effective batch size 8. Validation/checkpoint saves run every 128 steps (768 planned optimizer steps); best checkpoint selection uses validation loss. GGUF export/download remain disabled.
+
+**Validation boundary:** dataset checks, patch-fixture validation, tests and CI must pass before GPU training. No v0.7 model-quality result exists until the fresh Colab run finishes. The 90% goal is not guaranteed; the legacy benchmark has four cases per diagnosis code and synthetic fixtures do not prove live n8n execution.
+
 ## Validation status
 
 Updated 21 November 2026. The maintainer supplied the Colab evidence ZIP, successful Q4_K_M conversion logs and a screenshot confirming artifact discovery and download initiation. The original notebook searched the wrong directory after conversion; commit 50b8b09 fixes discovery in both notebooks. The returned evidence is preserved unchanged and independently scored. See the recorded T4 run below.

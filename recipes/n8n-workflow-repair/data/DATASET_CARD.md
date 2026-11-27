@@ -1,44 +1,44 @@
-# Dataset card: n8n workflow diagnosis and repair v0.6
+# Dataset card: n8n workflow diagnosis and repair v0.7
 
-## Prepared training and validation data
+## Authored data
 
-The v0.4 source corpus contains 640 training, 128 validation and 192 legacy held-out evaluation cases. v0.5/v0.6 add 540 independently authored synthetic training scenarios across the eight canonical categories.
+The v0.4 source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. v0.5/v0.6/v0.7 add 888 independently authored synthetic training examples.
 
-| Supplemental category | New cases |
+| Supplemental category | Cases |
 |---|---:|
-| Data mapping | 144 |
-| Item linking | 72 |
-| Node configuration | 78 |
-| Code node | 72 |
-| Execution API | 66 |
-| Expression | 36 |
-| Workflow structure | 36 |
-| Credentials | 36 |
-| **Total supplemental training** | **540** |
+| Data mapping | 228 |
+| Item linking | 144 |
+| Node configuration | 126 |
+| Code node | 108 |
+| Execution API | 102 |
+| Expression | 60 |
+| Workflow structure | 60 |
+| Credentials | 60 |
+| **Total** | **888** |
 
-The preparation script normalizes a small number of legacy label-boundary errors, then retains the 1,180 source/supplemental training cases and balances all 48 diagnosis codes to 48 examples each. It creates deterministic variants only to fill remaining per-code slots. These variants are not independent incidents or new root causes.
+The latest v0.7 increment contains 348 train-only examples (84 mapping, 72 linking, 48 node configuration, 36 Code node, 36 execution/API, 24 expression, 24 workflow structure and 24 credentials) and 24 validation-only examples (12 mapping and 12 item linking).
 
-| Prepared split | Examples | Distribution |
+## Prepared splits
+
+The 1,528 authored synthetic training scenarios (640 original + 888 supplemental) are balanced to 64 examples for each of the 48 canonical diagnosis codes. The resulting prepared training split contains 3,072 examples. The remaining 1,544 examples are deterministic node-name, safe identifier/domain and position variants; they preserve the source labels/patches and are **not** independent incidents.
+
+| Split | Count | Distribution |
 |---|---:|---|
-| Training | 2,304 | 48 per diagnosis code; 288 per category |
-| Validation | 132 | 128 original + 4 supplemental |
-| Legacy held-out evaluation | 192 | 24 per category; 4 per diagnosis code |
-| **Prepared total** | **2,628** | Excludes separate challenge evaluation |
+| Training | 3,072 | 64 per code; 384 per category |
+| Validation | 156 | 128 original + 4 v0.6 + 24 v0.7 supplemental |
+| Original held-out evaluation | 192 | 24 per category; 4 per code |
+| **Prepared total** | **3,420** | Excludes separate challenge evaluation |
 
-## Separate challenge evaluation
+The separate `challenge-eval-v0.6.jsonl` contains 48 held-out synthetic cases, one per diagnosis code. It is not included in training, validation or the prepared split.
 
-`challenge-eval-v0.6.jsonl` contains 48 independently authored synthetic cases, one for each canonical diagnosis code. It is kept out of training and validation. It is evaluated separately from the original 192-case held-out benchmark. One case per code is a useful challenge smoke test, but it is not a statistically precise per-code or per-category estimate.
+## Data quality and safety
 
-The original `eval.jsonl` is preserved unchanged. Neither held-out evaluation set is augmented or used for training.
+- The original `eval.jsonl` is preserved byte-for-byte and is not used for training or validation.
+- Prompt fingerprints are checked after removing case IDs to detect exact duplicates and cross-split leakage.
+- Category and diagnosis labels are checked against the canonical 48-code taxonomy.
+- Patch paths are validated against the supplied synthetic workflow fixture. This does not execute the repaired workflow in n8n.
+- Credentials and secrets, ambiguous or unavailable item lineage, network/DNS failures, confirmed provider outages and unexplained runtime timeouts require human review rather than speculative patches.
+- All authored additions are synthetic. V0.7 improves coverage of distinct reasoning patterns; it does not establish production incident coverage.
+- The legacy test split provides only four examples per diagnosis code. Its code-level percentages are highly sensitive to one case and should not be read as a reliability guarantee.
 
-## Data quality and limitations
-
-- Every prompt uses an opaque case ID; labels are not encoded in IDs.
-- Prompt fingerprints are checked after removing the case ID to catch exact duplicates and cross-split leakage.
-- Diagnosis code and category are checked against the canonical taxonomy.
-- JSON Patch paths are checked against synthetic workflow fixtures; this does not execute a workflow in a live n8n instance.
-- Credential/secret, unresolved lineage, network/DNS failure, confirmed outage and unsupported runtime-timeout cases require human review rather than speculative patches.
-- All examples are synthetic. The generated augmentation variants preserve their source labels and patches; they do not represent independent real-world incidents.
-- The held-out sets are small and synthetic. Their scores do not establish production reliability.
-
-The notebook uses conversational prompt/completion training with `completion_only_loss=True`; validation loss selects the best checkpoint. Base and fine-tuned evaluation use the same retrieved official-document context and generation settings. GGUF export/download remain disabled.
+The notebook uses Qwen3-1.7B 4-bit QLoRA, rank 16 / alpha 32, a 1.0e-5 learning rate and two epochs. TRL conversational prompt/completion training uses `completion_only_loss=True`; validation loss selects the best checkpoint with evaluation/checkpoint saves every 128 steps. GGUF export/download remain disabled.
