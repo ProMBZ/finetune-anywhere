@@ -117,9 +117,12 @@ def test_notebook_uses_v05_supplemental_training_and_records_its_hash():
         for index, cell in enumerate(book["cells"])
         if "'dataset_preparation': preparation_report" in cell_text(book, index)
     )
+    config = (ROOT / "recipes/n8n-workflow-repair/config.yaml").read_text(encoding="utf-8")
 
     assert "prepared-dataset-v0.5" in dataset
     assert "train_per_code=40" in dataset
+    assert "learning_rate: 0.000015" in config
+    assert "epochs: 2" in config
     assert "'training_data_version': preparation_report['version']" in report
     assert "'supplemental_train_sha256'" in report
 
