@@ -105,7 +105,7 @@ def test_v06_supplemental_training_coverage_and_schema():
         "DEFAULT_OPERATOR_LOSES_FALSY_VALUE", "BOOLEAN_STRING_COERCION",
         "NESTED_FIELD_PATH_MISMATCH",
     ))
-    assert len(diagnosis_counts) == 42
+    assert len(diagnosis_counts) == 48
 
 
 def test_validation_timeout_supplement_is_abstention_only():
