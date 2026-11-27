@@ -7,6 +7,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from prepare_n8n_dataset import prepare_dataset
+from score_n8n_repairs import apply_patch
 from validate_n8n_dataset import validate_dataset
 
 DATA_DIR = REPO_ROOT / "recipes" / "n8n-workflow-repair" / "data"
@@ -204,6 +205,28 @@ def test_challenge_eval_has_one_heldout_case_per_canonical_code():
         fingerprints.add(fingerprint)
     assert len(counts) == 48
     assert set(counts.values()) == {1}
+
+
+
+def test_v07_if_branch_repairs_change_the_misrouted_outputs():
+    rows = read_jsonl(DATA_DIR / "supplemental-train-v0.7-workflow.jsonl")
+    cases = 0
+    for row in rows:
+        prompt = json.loads(row["messages"][1]["content"])
+        answer = json.loads(row["messages"][2]["content"])
+        if answer["diagnosis_code"] != "IF_BRANCH_MISROUTED":
+            continue
+        cases += 1
+        before = prompt["workflow"]["connections"][answer["faulty_node"]]["main"]
+        repaired = apply_patch(prompt["workflow"], answer["patch"])
+        after = repaired["connections"][answer["faulty_node"]]["main"]
+        assert before != after, "IF branch repair must not be a no-op"
+        expected = prompt["expected_behavior"].removeprefix("Route true to ").removesuffix(".")
+        true_target, false_target = expected.split(" and false to ", 1)
+        assert after[0][0]["node"] == true_target
+        assert after[1][0]["node"] == false_target
+    assert cases == 4
+
 
 
 def test_preparation_does_not_overwrite_existing_run(tmp_path):
