@@ -1,6 +1,5 @@
 """Guard the Qwen3 n8n notebook's dataset and loss-mask contract."""
 import json
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,10 +68,10 @@ def test_gguf_export_remains_disabled():
 
     # Locate settings by content, not absolute notebook cell indexes: adding a
     # Markdown section must not make this safety regression test fail.
-    assert re.search(r"(?m)^EXPORT_GGUF\\s*=\\s*False\\s*$", export)
+    assert any(line.strip() == "EXPORT_GGUF = False" for line in export.splitlines())
     assert "if EXPORT_GGUF:" in export
     assert "model.save_pretrained_gguf(" in export
 
-    assert re.search(r"(?m)^DOWNLOAD_GGUF\\s*=\\s*False\\s*$", download)
+    assert any(line.strip() == "DOWNLOAD_GGUF = False" for line in download.splitlines())
     assert "if DOWNLOAD_GGUF:" in download
     assert "files.download(str(file))" in download
