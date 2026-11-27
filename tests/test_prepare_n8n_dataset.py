@@ -1,0 +1,25 @@
+import sys
+from pathlib import Path
+REPO_ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(REPO_ROOT/"scripts"))
+from prepare_n8n_dataset import prepare_dataset
+from validate_n8n_dataset import validate_dataset
+
+def test_preparation_balances_training_but_keeps_heldout_splits(tmp_path):
+    source=REPO_ROOT/"recipes"/"n8n-workflow-repair"/"data"; output=tmp_path/"prepared"
+    report=prepare_dataset(source,output,train_per_code=18)
+    assert report["status"]=="prepared"
+    assert report["counts"]=={"train":864,"valid":128,"eval":192,"total":1184}
+    checked=validate_dataset(output)
+    assert checked["status"]=="passed" and checked["unique_case_ids"]==1184
+    assert checked["unique_case_fingerprints"]==1184
+    manifest=__import__("json").loads((output/"manifest.json").read_text())
+    assert set(manifest["code_distribution"]["train"].values())=={18}
+    assert manifest["counts"]["eval"]==192
+
+def test_preparation_does_not_overwrite_existing_run(tmp_path):
+    source=REPO_ROOT/"recipes"/"n8n-workflow-repair"/"data"; output=tmp_path/"prepared"; output.mkdir()
+    (output/"keep.txt").write_text("keep")
+    try: prepare_dataset(source,output,train_per_code=18)
+    except FileExistsError: pass
+    else: raise AssertionError("must not overwrite existing experiment data")

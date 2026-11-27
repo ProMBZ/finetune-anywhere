@@ -1,7 +1,7 @@
 {
   "name": "n8n workflow diagnosis and repair dataset",
-  "version": "0.3.0",
-  "provenance": "Original synthetic diagnostic cases. v0.2 training and former-validation records were reviewed and normalized; three mismatched examples were replaced. The v0.3 validation and evaluation splits use separately authored scenario templates and varied node types, parameters, errors, payloads, version-context notices and workflow graphs. No customer workflows, production exports or real secrets are included.",
+  "version": "0.4.0",
+  "provenance": "v0.4 committed source corpus. Earlier v0.3 validation/evaluation case IDs contained category/diagnosis labels and are replaced with opaque IDs. Colab deterministically augments only the 640 training source cases to 32 examples per each of 48 canonical codes; validation and evaluation are not augmented. All examples are synthetic.",
   "license": "MIT (repository license)",
   "format": "JSONL chat messages: system, user, assistant",
   "counts": {
@@ -221,5 +221,17 @@
       "WRONG_ITEM_SELECTOR": 4
     }
   },
-  "validation_policy": "Exact per-code counts are checked in every split against code_distribution in this manifest."
+  "validation_policy": "Exact per-code counts are checked in every split against code_distribution in this manifest.",
+  "case_id_policy": "Opaque case-<16 hexadecimal characters>; category and diagnosis labels must never appear in identifiers.",
+  "preparation": {
+    "script": "scripts/prepare_n8n_dataset.py",
+    "source_train": 640,
+    "prepared_train": 1536,
+    "train_per_diagnosis_code": 32,
+    "generated_training_variants": 896,
+    "validation_unchanged": 128,
+    "evaluation_unchanged": 192,
+    "note": "Only train is augmented. Validation/evaluation remain unchanged apart from opaque case IDs."
+  },
+  "evaluation_limitations": "The held-out evaluation contains four cases per diagnosis code. Per-code estimates are noisy and synthetic results do not establish production reliability."
 }

@@ -1,43 +1,49 @@
 # n8n workflow diagnosis and repair
 
-Fine-tune Qwen3-1.7B with the starter repository's Unsloth QLoRA Colab pipeline to classify n8n failures, identify root causes and propose minimal JSON Patch repairs.
+Fine-tune Qwen3-1.7B to classify n8n failures, identify evidence-supported root causes and propose minimal JSON Patch repairs.
 
-## Dataset v0.3
+## Dataset v0.4
 
-| Split | Cases | Per category |
-|---|---:|---:|
-| Training | 640 | 80 |
-| Validation | 128 | 16 |
-| Held-out evaluation | 192 | 24 |
-| **Total** | **960** | |
+The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares a balanced training set of **1,536 cases (32 per diagnosis code)** using 896 deterministic, meaning-preserving variants. Validation and evaluation are not augmented.
 
-Eight categories are covered: expression, data_mapping, item_linking, node_configuration, workflow_structure, code_node, execution_api, credentials.
+| Prepared split | Cases | Distribution |
+|---|---:|---|
+| Training | 1,536 | 32 per code; 192 per category |
+| Validation | 128 | 16 per category |
+| Held-out evaluation | 192 | 24 per category; 4 per code |
+| **Total** | **1,856** | |
 
-There are 48 canonical diagnosis codes (six per category). The codebook is in `data/diagnosis-codes.json`; Colab adds its concise code definitions to the shared system prompt for train, validation and evaluation. v0.2 contained inconsistent near-synonymous labels such as `AMBIGUOUS_ITEM_LINK` and `AMBIGUOUS_ITEM_LINKING`, which made exact code scoring unnecessarily noisy.
+There are 48 canonical diagnosis codes, six per category, described in `data/diagnosis-codes.json`.
 
-The training split is balanced at 80 cases per category. It retains 197 reviewed v0.2 training cases and 50 former validation cases after normalizing their diagnosis labels, plus 393 new or replacement synthetic examples. Validation and evaluation prompts are newly authored. The held-out evaluation split contains 192 cases: 24 per category and four per diagnosis code. The test prompts use unique case IDs, input data and execution descriptions; some underlying repair patterns necessarily recur because the diagnosis taxonomy is finite. The original v0.2 evaluation set is archived unchanged at `data/archive/eval-v0.2.jsonl` and is not used for v0.3 training.
+## Critical v0.3 benchmark issue fixed
 
-## Evaluation improvements
+Earlier validation/evaluation `case_id` values contained their target category and diagnosis-code labels. Because the ID is part of the user prompt, that leaked the expected answer. v0.4 uses opaque IDs and the validator rejects identifiers containing category/code names. It also checks prompt uniqueness after removing the ID field.
 
-- Diagnosis-code output is checked against the controlled category-specific codebook.
-- Per-category totals include malformed model outputs as incorrect, rather than silently omitting them.
-- The report includes codebook validity, exact diagnosis-code accuracy, macro per-code accuracy, accuracy conditional on correct category, per-code results and a confusion matrix.
-- Patch applicability remains a structural JSON fixture check only, not a live n8n execution test.
-- The same retrieved official documentation excerpts are supplied to training, validation and evaluation prompts to avoid a documentation-context mismatch.
-- Best adapter checkpoint is selected by validation loss.
+## Training augmentation
+
+The preparation script keeps all 640 source cases and adds 896 controlled variants. It consistently renames workflow nodes throughout expressions, connections and patches; changes safe sample identifiers/domains; and varies positions where present. The original root-cause label and patch are preserved.
+
+These are augmentation variants, **not 896 independent new incidents**. They balance labels and expose the model to different surface forms; they do not add 896 new root-cause patterns. The 192-case held-out test set is kept unchanged apart from opaque IDs.
+
+## Evaluation
+
+- Malformed outputs count as wrong in full metric denominators.
+- Diagnosis-code reporting includes exact accuracy, macro per-code accuracy, code validity, conditional accuracy, per-code counts and a confusion matrix.
+- Human-review decision agreement is separated from safe-abstention precision and recall.
+- Gold-patch match is strict and can penalize alternative valid repairs.
+- Patch applicability checks JSON Patch against synthetic fixtures; it does not prove execution inside n8n.
+- Both base and fine-tuned models receive the same retrieved documentation excerpts and held-out prompts.
+
+The notebook trains on assistant responses only using TRL 0.22.2's conversational dataset support. The best adapter checkpoint is selected by validation loss.
 
 ## Fine-tuning configuration
 
-Qwen3-1.7B; 4-bit QLoRA; LoRA rank 16 / alpha 32; learning rate 5e-5; four epochs; 2048-token context; batch size 1 with gradient accumulation 8. The notebook validates actual token lengths before training and reduces retrieval excerpts if necessary.
-
-## Scope and limitations
-
-The model proposes patches; it never applies them to a production workflow. Credential cases and evidenced external outages require abstention. Missing item lineage can use `.first()` only when exactly one upstream result is explicitly guaranteed; otherwise it must abstain. Structural patch applicability does not prove successful live execution. Synthetic data is useful for controlled iteration but cannot guarantee 100% real-world accuracy. A separate real-workflow test set is still required.
+Qwen3-1.7B; 4-bit QLoRA; LoRA rank 16 / alpha 32; learning rate 2e-5; three epochs; 2048-token context; batch size 1 with gradient accumulation 8. GGUF/Ollama export is disabled.
 
 ## Colab
 
 [Open the updated n8n repair Colab notebook](https://colab.research.google.com/github/ProMBZ/finetune-anywhere/blob/project-01-n8n-workflow-repair/paths/colab/n8n-workflow-repair.ipynb).
 
-Select a T4 GPU when available, then run the notebook top to bottom. It validates the dataset, checks project tests, fetches official n8n documentation, applies the same retrieval step to all splits, scores the base model, fine-tunes Qwen3, and evaluates all 192 held-out prompts. GGUF/Ollama export is intentionally disabled.
+Select a T4 GPU when available and run top to bottom. It prepares the balanced dataset, validates patches, runs project tests, fetches official n8n documentation, scores the base model, fine-tunes Qwen3 and evaluates all 192 held-out prompts. The evidence ZIP records data preparation, hashes, settings and complete base/fine-tuned outputs.
 
-Keep `eval.jsonl` untouched. Do not train against the held-out references or tune repeatedly against individual test misses.
+Keep `eval.jsonl` untouched. Do not train against held-out references or tune repeatedly against individual test misses.

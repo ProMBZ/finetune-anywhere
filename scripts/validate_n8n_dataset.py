@@ -1,13 +1,25 @@
 """Validate canonical n8n diagnosis data, safety rules and JSON Patch fixtures."""
 from __future__ import annotations
-import argparse
-import json
+import argparse, json, re
 from collections import Counter
 from pathlib import Path
 from typing import Any
 from score_n8n_repairs import CATEGORIES, CODES_BY_CATEGORY, apply_patch, parse_json_object, schema_errors
 
 NODE_LEVEL_SETTINGS={"retryOnFail","maxTries","waitBetweenTries"}
+OPAQUE_CASE_ID=re.compile(r"case-[0-9a-f]{16}\Z")
+
+def case_id_is_opaque(case_id: Any) -> bool:
+    if not isinstance(case_id,str) or not OPAQUE_CASE_ID.fullmatch(case_id): return False
+    lowered=case_id.lower()
+    labels=set(CATEGORIES)
+    for values in CODES_BY_CATEGORY.values(): labels.update(values)
+    return not any(label.lower() in lowered for label in labels)
+
+def _case_fingerprint(prompt: dict[str,Any]) -> str:
+    without_id=dict(prompt)
+    without_id.pop("case_id",None)
+    return json.dumps(without_id,sort_keys=True,ensure_ascii=False,separators=(",",":"))
 
 def workflow_graph_is_sound(workflow: Any) -> bool:
     if not isinstance(workflow,dict): return False
@@ -20,9 +32,9 @@ def workflow_graph_is_sound(workflow: Any) -> bool:
         if source not in known or not isinstance(groups,dict): return False
         for outputs in groups.values():
             if not isinstance(outputs,list): return False
-            for output_group in outputs:
-                if not isinstance(output_group,list): return False
-                for edge in output_group:
+            for group in outputs:
+                if not isinstance(group,list): return False
+                for edge in group:
                     if not isinstance(edge,dict) or edge.get("node") not in known: return False
     return True
 
@@ -34,27 +46,22 @@ def node_settings_are_well_formed(workflow: Any) -> bool:
         if not isinstance(params,dict) or NODE_LEVEL_SETTINGS.intersection(params): return False
     return True
 
-def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
+def validate_dataset(data_dir: str|Path|None=None) -> dict[str,Any]:
     repo_root=Path(__file__).resolve().parents[1]
     root=Path(data_dir) if data_dir else repo_root/"recipes"/"n8n-workflow-repair"/"data"
     manifest=json.loads((root/"manifest.json").read_text(encoding="utf-8"))
     taxonomy=json.loads((root/"diagnosis-codes.json").read_text(encoding="utf-8"))
-    taxonomy_codes={
-        category:{entry.get("code") for entry in entries if isinstance(entry,dict)}
-        for category,entries in taxonomy.get("categories",{}).items()
-        if isinstance(entries,list)
-    }
-    if taxonomy_codes!=CODES_BY_CATEGORY:
-        raise ValueError("diagnosis-codes.json does not match the scorer's canonical codebook")
+    taxonomy_codes={category:{entry.get("code") for entry in entries if isinstance(entry,dict)}
+                    for category,entries in taxonomy.get("categories",{}).items() if isinstance(entries,list)}
+    if taxonomy_codes!=CODES_BY_CATEGORY: raise ValueError("diagnosis-codes.json does not match scorer codebook")
     expected=manifest.get("counts",{})
     expected_distribution=manifest.get("distribution",{})
     expected_code_distribution=manifest.get("code_distribution",{})
-    seen_prompts=set(); seen_ids=set()
+    seen_prompts=set(); seen_ids=set(); seen_fingerprints=set()
     report={"counts":{},"categories":{},"codes":{},"patches_checked":0}
     errors=[]
     for split in ("train","valid","eval"):
-        path=root/f"{split}.jsonl"
-        rows=[]
+        path=root/f"{split}.jsonl"; rows=[]
         for line_number,line in enumerate(path.read_text(encoding="utf-8").splitlines(),1):
             if not line.strip(): continue
             try: rows.append(json.loads(line))
@@ -63,8 +70,7 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
         if expected.get(split)!=len(rows): errors.append(f"{split}: manifest says {expected.get(split)}, file has {len(rows)}")
         category_counts=Counter(); code_counts=Counter()
         for index,row in enumerate(rows,1):
-            case=f"{split}:{index}"
-            messages=row.get("messages")
+            case=f"{split}:{index}"; messages=row.get("messages")
             if not isinstance(messages,list) or len(messages)!=3:
                 errors.append(f"{case}: expected exactly three chat messages"); continue
             if [m.get("role") for m in messages]!=["system","user","assistant"]:
@@ -76,14 +82,18 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
             prompt=parse_json_object(prompt_text); answer=parse_json_object(messages[2].get("content"))
             if prompt is None or not isinstance(prompt.get("workflow"),dict):
                 errors.append(f"{case}: user message must contain workflow JSON"); continue
+            case_id=prompt.get("case_id")
+            if not case_id_is_opaque(case_id):
+                errors.append(f"{case}: case_id must be opaque and must not encode category/diagnosis labels")
+            elif case_id in seen_ids: errors.append(f"{case}: duplicate case_id {case_id}")
+            else: seen_ids.add(case_id)
+            fingerprint=_case_fingerprint(prompt)
+            if fingerprint in seen_fingerprints: errors.append(f"{case}: duplicate prompt after removing case_id")
+            else: seen_fingerprints.add(fingerprint)
             if answer is None:
                 errors.append(f"{case}: assistant message is not JSON"); continue
             if not node_settings_are_well_formed(prompt["workflow"]):
                 errors.append(f"{case}: retry settings must be node-level properties")
-            case_id=prompt.get("case_id")
-            if not isinstance(case_id,str) or not case_id: errors.append(f"{case}: missing case_id")
-            elif case_id in seen_ids: errors.append(f"{case}: duplicate case_id {case_id}")
-            else: seen_ids.add(case_id)
             output_errors=schema_errors(answer)
             if output_errors:
                 errors.append(f"{case}: output schema errors: {'; '.join(output_errors)}"); continue
@@ -94,25 +104,14 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
             if category=="execution_api" and code in {"UPSTREAM_SERVICE_UNAVAILABLE","DNS_OR_CONNECTION_FAILURE"}:
                 if answer["patch"]!=[] or answer["needs_human_review"] is not True: errors.append(f"{case}: outage/network must abstain")
             if category=="item_linking" and code=="ITEM_LINEAGE_UNAVAILABLE":
-                evidence = " ".join([
-                    str(prompt.get("execution_error", "")),
-                    str(prompt.get("expected_behavior", "")),
-                    str(prompt.get("evidence_note", "")),
-                ]).lower()
-                singleton_proven = any(
-                    phrase in evidence for phrase in (
-                        "exactly one item", "single result", "returns one item", "only one item"
-                    )
-                )
-                if singleton_proven:
-                    safe_first = any(
-                        ".first()" in str(operation.get("value", ""))
-                        for operation in answer["patch"]
-                    )
+                evidence=" ".join([str(prompt.get("execution_error","")),str(prompt.get("expected_behavior","")),str(prompt.get("evidence_note",""))]).lower()
+                singleton=any(p in evidence for p in ("exactly one item","single result","returns one item","only one item"))
+                if singleton:
+                    safe_first=any(".first()" in str(op.get("value","")) for op in answer["patch"])
                     if not answer["patch"] or answer["needs_human_review"] is True or not safe_first:
-                        errors.append(f"{case}: proven singleton lineage needs a minimal .first() patch")
-                elif answer["patch"] != [] or answer["needs_human_review"] is not True:
-                    errors.append(f"{case}: unresolved item lineage must abstain without a patch")
+                        errors.append(f"{case}: proven singleton lineage needs minimal .first() patch")
+                elif answer["patch"]!=[] or answer["needs_human_review"] is not True:
+                    errors.append(f"{case}: unresolved item lineage must abstain")
             if answer["patch"]:
                 try:
                     updated=apply_patch(prompt["workflow"],answer["patch"])
@@ -135,6 +134,7 @@ def validate_dataset(data_dir: str | Path | None=None) -> dict[str,Any]:
     report["total"]=sum(report["counts"].values())
     report["unique_prompts"]=len(seen_prompts)
     report["unique_case_ids"]=len(seen_ids)
+    report["unique_case_fingerprints"]=len(seen_fingerprints)
     report["canonical_diagnosis_codes"]=code_count
     report["status"]="passed"
     return report
