@@ -9,7 +9,7 @@ from score_n8n_repairs import CODES_BY_CATEGORY
 PEOPLE={"Ari":"Riley","Bo":"Casey","Ria":"Jordan","Sam":"Taylor","Mina":"Morgan","Joe":"Avery","Ana":"Quinn","Lee":"Rowan"}
 
 def _opaque_id(split: str, ordinal: int, origin: str, variant: int=0) -> str:
-    raw=f"n8n-repair-v0.4|{split}|{ordinal}|{origin}|{variant}".encode()
+    raw=f"n8n-repair-v0.5|{split}|{ordinal}|{origin}|{variant}".encode()
     return "case-"+hashlib.sha256(raw).hexdigest()[:16]
 
 def _rewrite_tree(value: Any, replacements: dict[str,str]) -> Any:
@@ -100,7 +100,7 @@ def _counts(rows: list[dict[str,Any]]) -> tuple[Counter,Counter]:
         categories[answer["category"]]+=1; codes[answer["diagnosis_code"]]+=1
     return categories,codes
 
-def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: int=32) -> dict[str,Any]:
+def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: int=40) -> dict[str,Any]:
     if train_per_code<18: raise ValueError("train_per_code must be at least 18")
     source,out=Path(source_dir),Path(output_dir)
     if out.exists() and any(out.iterdir()): raise FileExistsError(f"output directory is not empty: {out}")
@@ -108,7 +108,18 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     taxonomy=json.loads((source/"diagnosis-codes.json").read_text(encoding="utf-8"))
     allowed={entry["code"] for entries in taxonomy["categories"].values() for entry in entries}
     if allowed!={code for codes in CODES_BY_CATEGORY.values() for code in codes}: raise ValueError("taxonomy differs from scorer codebook")
-    train,valid,evaluation=(_read(source/f"{name}.jsonl") for name in ("train","valid","eval"))
+    base_train,valid,evaluation=(_read(source/f"{name}.jsonl") for name in ("train","valid","eval"))
+    supplemental_path=source/"supplemental-train-v0.5.jsonl"
+    supplemental=_read(supplemental_path) if supplemental_path.exists() else []
+    train=base_train+supplemental
+    for index,row in enumerate(supplemental,1):
+        messages=row.get("messages")
+        if not isinstance(messages,list) or len(messages)!=3:
+            raise ValueError(f"supplemental-train-v0.5.jsonl:{index}: expected three chat messages")
+        if [message.get("role") for message in messages]!=["system","user","assistant"]:
+            raise ValueError(f"supplemental-train-v0.5.jsonl:{index}: roles must be system, user, assistant")
+        if not all(isinstance(message.get("content"),str) for message in messages):
+            raise ValueError(f"supplemental-train-v0.5.jsonl:{index}: message content must be text")
     groups=defaultdict(list)
     for row in train:
         code=json.loads(row["messages"][2]["content"]).get("diagnosis_code")
@@ -144,12 +155,12 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     if set(code_distribution["train"].values())!={train_per_code}: raise AssertionError("training code counts are not balanced")
     source_manifest=json.loads((source/"manifest.json").read_text(encoding="utf-8"))
     total=sum(len(rows) for rows in splits.values())
-    manifest={"name":"n8n workflow diagnosis and repair dataset","version":"0.4.0-prepared",
-      "provenance":"640-case source corpus plus deterministic meaning-preserving training variants. Validation/evaluation are not augmented; only IDs are rewritten.",
+    manifest={"name":"n8n workflow diagnosis and repair dataset","version":"0.5.0-prepared",
+      "provenance":"v0.4 source corpus plus independently authored v0.5 supplemental training scenarios for data mapping, item linking, node configuration, Code nodes and execution/API failures. Deterministic augmentation is applied only to training; validation/evaluation remain unchanged.",
       "license":source_manifest.get("license","MIT (repository license)"),"format":"JSONL chat messages: system, user, assistant",
       "counts":{"train":len(prepared_train),"valid":len(prepared_valid),"eval":len(prepared_eval),"total":total},
       "categories":sorted(CODES_BY_CATEGORY),"diagnosis_code_taxonomy":"diagnosis-codes.json",
-      "distribution":distribution,"code_distribution":code_distribution,
+      "distribution":distribution,"code_distribution":code_distribution,\n      "supplemental_training":{"file":supplemental_path.name if supplemental else None,\n       "base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),\n       "supplemental_cases_are_synthetic":True,"supplemental_cases_are_train_only":True},
       "augmentation":{"source_train_cases":len(train),"generated_train_variants":generated,"target_examples_per_diagnosis_code":train_per_code,
        "validation_augmented":False,"evaluation_augmented":False,
        "method":"Consistent node renaming across references/patches, safe sample email/ID/domain substitutions and position variations.",
@@ -162,10 +173,10 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
         (out/f"{split}.jsonl").write_text("".join(json.dumps(row,ensure_ascii=False,separators=(",",":"))+"\n" for row in rows),encoding="utf-8")
     (out/"diagnosis-codes.json").write_text(json.dumps(taxonomy,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     (out/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    (out/"DATASET_CARD.md").write_text(f"# Prepared dataset v0.4\n\n- Training: {len(prepared_train)} ({train_per_code} per code)\n- Validation: {len(prepared_valid)} (unchanged)\n- Held-out evaluation: {len(prepared_eval)} (unchanged)\n- Generated training variants: {generated}\n\nTraining variants are semantic-preserving transformations, not newly observed incidents. The held-out set is not augmented; case IDs are opaque.\n",encoding="utf-8")
+    (out/"DATASET_CARD.md").write_text(f"# Prepared dataset v0.5\n\n- Base source training cases: {len(base_train)}\n- Supplemental authored training cases: {len(supplemental)}\n- Training: {len(prepared_train)} ({train_per_code} per code)\n- Validation: {len(prepared_valid)} (unchanged)\n- Held-out evaluation: {len(prepared_eval)} (unchanged)\n- Generated training variants: {generated}\n\nTraining variants are semantic-preserving transformations, not newly observed incidents. The held-out set is not augmented; case IDs are opaque.\n",encoding="utf-8")
     if (source/"archive").exists(): shutil.copytree(source/"archive",out/"archive",dirs_exist_ok=True)
-    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"note":"Validation and evaluation were not augmented."}
+    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"note":"Validation and evaluation were not augmented."}
 
 if __name__=="__main__":
-    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=32)
+    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=40)
     args=parser.parse_args(); print(json.dumps(prepare_dataset(args.source_dir,args.output_dir,args.train_per_code),indent=2))
