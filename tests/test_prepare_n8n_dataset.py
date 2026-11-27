@@ -2,63 +2,166 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
-REPO_ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(REPO_ROOT/"scripts"))
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
 from prepare_n8n_dataset import prepare_dataset
 from validate_n8n_dataset import validate_dataset
 
-def test_preparation_balances_training_but_keeps_heldout_splits(tmp_path):
-    source=REPO_ROOT/"recipes"/"n8n-workflow-repair"/"data"; output=tmp_path/"prepared"
-    report=prepare_dataset(source,output,train_per_code=40)
-    assert report["status"]=="prepared"
-    assert report["counts"]=={"train":1920,"valid":128,"eval":192,"total":2240}
-    checked=validate_dataset(output)
-    assert checked["status"]=="passed" and checked["unique_case_ids"]==2240
-    assert checked["unique_case_fingerprints"]==2240
-    manifest=__import__("json").loads((output/"manifest.json").read_text())
-    assert set(manifest["code_distribution"]["train"].values())=={40}
-    assert manifest["counts"]["eval"]==192
-    assert manifest["supplemental_training"]["base_source_train_cases"]==640
-    assert manifest["supplemental_training"]["supplemental_train_cases"]==216
-    assert manifest["supplemental_training"]["supplemental_cases_are_train_only"] is True
+DATA_DIR = REPO_ROOT / "recipes" / "n8n-workflow-repair" / "data"
+SUPPLEMENTAL_FILES = [
+    "supplemental-train-v0.5.jsonl",
+    "supplemental-train-v0.6-mapping.jsonl",
+    "supplemental-train-v0.6-linking.jsonl",
+    "supplemental-train-v0.6-node-config.jsonl",
+    "supplemental-train-v0.6-code.jsonl",
+    "supplemental-train-v0.6-api.jsonl",
+    "supplemental-train-v0.6-expression.jsonl",
+    "supplemental-train-v0.6-workflow.jsonl",
+    "supplemental-train-v0.6-credentials.jsonl",
+]
+
+
+def read_jsonl(path):
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+
+
+def test_v06_preparation_balances_training_and_preserves_heldout_splits(tmp_path):
+    output = tmp_path / "prepared"
+    report = prepare_dataset(DATA_DIR, output)
+    assert report["status"] == "prepared"
+    assert report["version"] == "0.6.0-prepared"
+    assert report["counts"] == {
+        "train": 2304,
+        "valid": 130,
+        "eval": 192,
+        "total": 2626,
+    }
+
+    checked = validate_dataset(output)
+    assert checked["status"] == "passed"
+    assert checked["unique_case_ids"] == 2626
+    assert checked["unique_case_fingerprints"] == 2626
+
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert set(manifest["code_distribution"]["train"].values()) == {48}
+    assert manifest["counts"]["eval"] == 192
+    assert manifest["supplemental_training"]["base_source_train_cases"] == 640
+    assert manifest["supplemental_training"]["supplemental_train_cases"] == 540
+    assert len(manifest["supplemental_training"]["files"]) == 9
+    assert manifest["supplemental_validation"]["cases"] == 2
+    assert manifest["supplemental_validation"]["validation_only"] is True
+    assert manifest["label_normalization"]["heldout_eval_modified"] is False
+    assert manifest["augmentation"]["evaluation_augmented"] is False
+    assert manifest["augmentation"]["validation_augmented"] is False
+
+
+def test_v06_supplemental_training_coverage_and_schema():
+    category_counts = Counter()
+    diagnosis_counts = Counter()
+    case_ids = set()
+    fingerprints = set()
+
+    for name in SUPPLEMENTAL_FILES:
+        rows = read_jsonl(DATA_DIR / name)
+        for row in rows:
+            messages = row["messages"]
+            assert [message["role"] for message in messages] == ["system", "user", "assistant"]
+            prompt = json.loads(messages[1]["content"])
+            answer = json.loads(messages[2]["content"])
+            assert set(answer) == {
+                "category", "diagnosis_code", "faulty_node", "root_cause", "patch",
+                "needs_human_review",
+            }
+            assert prompt["workflow"]["nodes"]
+            assert any(node["name"] == answer["faulty_node"] for node in prompt["workflow"]["nodes"])
+            assert isinstance(answer["patch"], list)
+            assert isinstance(answer["needs_human_review"], bool)
+            assert prompt["case_id"].startswith("case-")
+            assert prompt["case_id"] not in case_ids
+            case_ids.add(prompt["case_id"])
+            fingerprint_prompt = dict(prompt)
+            fingerprint_prompt.pop("case_id", None)
+            fingerprint = json.dumps(fingerprint_prompt, sort_keys=True, ensure_ascii=False)
+            assert fingerprint not in fingerprints
+            fingerprints.add(fingerprint)
+            category_counts[answer["category"]] += 1
+            diagnosis_counts[answer["diagnosis_code"]] += 1
+
+    assert sum(category_counts.values()) == 540
+    assert category_counts == {
+        "data_mapping": 144,
+        "item_linking": 72,
+        "node_configuration": 72,
+        "code_node": 72,
+        "execution_api": 72,
+        "expression": 36,
+        "workflow_structure": 36,
+        "credentials": 36,
+    }
+    assert all(diagnosis_counts[code] == 24 for code in (
+        "FIELD_MISSING_OR_NULL", "ARRAY_INDEX_INCORRECT", "TYPE_COERCION_REQUIRED",
+        "DEFAULT_OPERATOR_LOSES_FALSY_VALUE", "BOOLEAN_STRING_COERCION",
+        "NESTED_FIELD_PATH_MISMATCH",
+    ))
+    assert len(diagnosis_counts) == 42
+
+
+def test_validation_timeout_supplement_is_abstention_only():
+    rows = read_jsonl(DATA_DIR / "supplemental-valid-v0.6.jsonl")
+    assert len(rows) == 2
+    for row in rows:
+        answer = json.loads(row["messages"][-1]["content"])
+        assert answer["diagnosis_code"] == "REQUEST_TIMEOUT"
+        assert answer["patch"] == []
+        assert answer["needs_human_review"] is True
+
+
+def test_challenge_eval_has_one_heldout_case_per_canonical_code():
+    rows = read_jsonl(DATA_DIR / "challenge-eval-v0.6.jsonl")
+    assert len(rows) == 48
+    counts = Counter()
+    fingerprints = set()
+    for row in rows:
+        prompt = json.loads(row["messages"][1]["content"])
+        answer = json.loads(row["messages"][2]["content"])
+        counts[answer["diagnosis_code"]] += 1
+        prompt.pop("case_id", None)
+        fingerprint = json.dumps(prompt, sort_keys=True, ensure_ascii=False)
+        assert fingerprint not in fingerprints
+        fingerprints.add(fingerprint)
+    assert len(counts) == 48
+    assert set(counts.values()) == {1}
+
 
 def test_preparation_does_not_overwrite_existing_run(tmp_path):
-    source=REPO_ROOT/"recipes"/"n8n-workflow-repair"/"data"; output=tmp_path/"prepared"; output.mkdir()
-    (output/"keep.txt").write_text("keep")
-    try: prepare_dataset(source,output,train_per_code=18)
-    except FileExistsError: pass
-    else: raise AssertionError("must not overwrite existing experiment data")
+    output = tmp_path / "prepared"
+    output.mkdir()
+    (output / "keep.txt").write_text("keep", encoding="utf-8")
+    try:
+        prepare_dataset(DATA_DIR, output, train_per_code=48)
+    except FileExistsError:
+        pass
+    else:
+        raise AssertionError("must not overwrite existing experiment data")
+
 
 def test_node_renaming_does_not_rewrite_new_replacement_text():
     from prepare_n8n_dataset import _rewrite_tree
-    value={"nodes":["HTTP Request","HTTP"],"expression":"$('HTTP Request').item + $('HTTP').item"}
-    renamed=_rewrite_tree(value,{"HTTP Request":"HTTP Request [variant 1]","HTTP":"HTTP [variant 2]"})
-    assert renamed["nodes"]==["HTTP Request [variant 1]","HTTP [variant 2]"]
-    assert renamed["expression"]=="$('HTTP Request [variant 1]').item + $('HTTP [variant 2]').item"
 
-
-def test_v05_supplemental_cases_expand_only_weak_categories():
-    source=REPO_ROOT/"recipes"/"n8n-workflow-repair"/"data"
-    rows=[json.loads(line) for line in (source/"supplemental-train-v0.5.jsonl").read_text().splitlines() if line]
-    assert len(rows)==216
-    category_counts=Counter()
-    code_counts=Counter()
-    for row in rows:
-        messages=row["messages"]
-        assert [message["role"] for message in messages]==["system","user","assistant"]
-        answer=json.loads(messages[2]["content"])
-        category_counts[answer["category"]]+=1
-        code_counts[answer["diagnosis_code"]]+=1
-    assert category_counts=={
-        "data_mapping":72,
-        "item_linking":36,
-        "node_configuration":36,
-        "code_node":36,
-        "execution_api":36,
+    value = {
+        "nodes": ["HTTP Request", "HTTP"],
+        "expression": "$('HTTP Request').item + $('HTTP').item",
     }
-    assert all(code_counts[code]==12 for code in (
-        "FIELD_MISSING_OR_NULL","ARRAY_INDEX_INCORRECT","TYPE_COERCION_REQUIRED",
-        "DEFAULT_OPERATOR_LOSES_FALSY_VALUE","BOOLEAN_STRING_COERCION","NESTED_FIELD_PATH_MISMATCH"
-    ))
-    assert len(code_counts)==30
-
+    renamed = _rewrite_tree(
+        value,
+        {
+            "HTTP Request": "HTTP Request [variant 1]",
+            "HTTP": "HTTP [variant 2]",
+        },
+    )
+    assert renamed["nodes"] == ["HTTP Request [variant 1]", "HTTP [variant 2]"]
+    assert renamed["expression"] == (
+        "$('HTTP Request [variant 1]').item + $('HTTP [variant 2]').item"
+    )
