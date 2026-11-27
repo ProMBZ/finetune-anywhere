@@ -144,6 +144,6 @@ def test_evaluation_evidence_uses_real_newlines():
     challenge = unique_code_cell_containing(book, "challenge_comparison_md")
     report = unique_code_cell_containing(book, "'run.json'")
 
-    assert r"challenge_comparison_md = '\\n'.join(challenge_lines) + '\\n'" in challenge
-    assert r"(OUTPUT / 'run.json').write_text(json.dumps(report, indent=2) + '\\n')" in report
+    assert r"challenge_comparison_md = '\n'.join(challenge_lines) + '\n'" in challenge
+    assert r"(OUTPUT / 'run.json').write_text(json.dumps(report, indent=2) + '\n')" in report
 
