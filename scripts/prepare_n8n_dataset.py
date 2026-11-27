@@ -363,21 +363,36 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
         (out/f"{split}.jsonl").write_text("".join(json.dumps(row,ensure_ascii=False,separators=(",",":"))+"\n" for row in rows),encoding="utf-8")
     (out/"diagnosis-codes.json").write_text(json.dumps(taxonomy,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     (out/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-        (out/"DATASET_CARD.md").write_text(
-        f"# Prepared dataset v0.6\\n\\n"
-        f"- Base source training cases: {len(base_train)}\\n"
-        f"- Supplemental authored training cases: {len(supplemental)}\\n"
-        f"- Prepared training: {len(prepared_train)} ({train_per_code} per code)\\n"
-        f"- Validation: {len(prepared_valid)} (includes {len(supplemental_valid)} validation-only cases; not augmented)\\n"
-        f"- Legacy held-out evaluation: {len(prepared_eval)} (untouched)\\n"
-        f"- Generated training variants: {generated}\\n"
-        f"- Label corrections: {dict(sorted(normalisation_report.items()))}\\n\\n"
+    (out/"DATASET_CARD.md").write_text(
+        f"# Prepared dataset v0.6\n\n"
+        f"- Base source training cases: {len(base_train)}\n"
+        f"- Supplemental authored training cases: {len(supplemental)}\n"
+        f"- Prepared training: {len(prepared_train)} ({train_per_code} per code)\n"
+        f"- Validation: {len(prepared_valid)} (includes {len(supplemental_valid)} validation-only cases; not augmented)\n"
+        f"- Legacy held-out evaluation: {len(prepared_eval)} (untouched)\n"
+        f"- Generated training variants: {generated}\n"
+        f"- Label corrections: {dict(sorted(normalisation_report.items()))}\n\n"
         "Training variants are not independent incidents. Synthetic supplemental examples are train-only. "
-        "Validation-only timeout cases are separate from training. The legacy held-out evaluation remains unchanged.\\n",
+        "Validation-only timeout cases are separate from training. The legacy held-out evaluation remains unchanged.\n",
         encoding="utf-8",
     )
-if (source/"archive").exists(): shutil.copytree(source/"archive",out/"archive",dirs_exist_ok=True)
-    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"label_normalization":dict(sorted(normalisation_report.items())),"supplemental_validation_cases":len(supplemental_valid),"note":"Training/validation labels were audited; legacy held-out evaluation was untouched."}
+    if (source/"archive").exists():
+        shutil.copytree(source/"archive", out/"archive", dirs_exist_ok=True)
+    return {
+        "status": "prepared",
+        "version": manifest["version"],
+        "counts": manifest["counts"],
+        "base_source_train_cases": len(base_train),
+        "supplemental_train_cases": len(supplemental),
+        "train_per_diagnosis_code": train_per_code,
+        "generated_training_variants": generated,
+        "unique_case_ids": len(seen_ids),
+        "unique_prompt_fingerprints": len(seen_prompts),
+        "label_normalization": dict(sorted(normalisation_report.items())),
+        "supplemental_validation_cases": len(supplemental_valid),
+        "note": "Training/validation labels were audited; legacy held-out evaluation was untouched.",
+    }
+
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=48)
