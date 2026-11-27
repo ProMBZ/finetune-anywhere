@@ -107,3 +107,19 @@ def test_step_8_replaces_duplicate_taxonomy_instead_of_appending_it():
     assert "row['messages'][0]['content'] = BASE_SYSTEM_INSTRUCTION" in dataset
     assert "row['messages'][0]['content'] += " not in dataset
     assert "Combined system instruction characters:" in dataset
+
+
+def test_notebook_uses_v05_supplemental_training_and_records_its_hash():
+    book = notebook()
+    dataset = cell_text(book, 16)
+    report = next(
+        cell_text(book, index)
+        for index, cell in enumerate(book["cells"])
+        if "'dataset_preparation': preparation_report" in cell_text(book, index)
+    )
+
+    assert "prepared-dataset-v0.5" in dataset
+    assert "train_per_code=40" in dataset
+    assert "'training_data_version': preparation_report['version']" in report
+    assert "'supplemental_train_sha256'" in report
+
