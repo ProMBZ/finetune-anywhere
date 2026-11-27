@@ -4,9 +4,9 @@ Fine-tune Qwen3-1.7B to classify n8n failures, identify evidence-supported root 
 
 ## Dataset v0.4
 
-The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares a balanced training set of **1,536 cases (32 per diagnosis code)** using 896 deterministic, meaning-preserving variants. Validation and evaluation are not augmented.
+The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares **1,536 training examples (32 per diagnosis code)** by retaining all 640 source cases and adding 896 deterministic, meaning-preserving variants. These are augmentation examples, not 1,536 independent incidents. Validation and evaluation are not augmented.
 
-| Prepared split | Cases | Distribution |
+| Prepared split | Examples | Distribution |
 |---|---:|---|
 | Training | 1,536 | 32 per code; 192 per category |
 | Validation | 128 | 16 per category |
@@ -34,7 +34,7 @@ These are augmentation variants, **not 896 independent new incidents**. They bal
 - Patch applicability checks JSON Patch against synthetic fixtures; it does not prove execution inside n8n.
 - Both base and fine-tuned models receive the same retrieved documentation excerpts and held-out prompts.
 
-The notebook trains on assistant responses only using TRL 0.22.2's conversational dataset support. The best adapter checkpoint is selected by validation loss.
+The notebook uses TRL 0.22.2's conversational prompt/completion format with `completion_only_loss=True`, so loss is applied to assistant diagnosis/repair targets without relying on assistant-token masks in Qwen3's stock chat template. The best adapter checkpoint is selected by validation loss.
 
 ## Fine-tuning configuration
 
