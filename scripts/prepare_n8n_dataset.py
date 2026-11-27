@@ -262,6 +262,15 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     allowed={entry["code"] for entries in taxonomy["categories"].values() for entry in entries}
     if allowed!={code for codes in CODES_BY_CATEGORY.values() for code in codes}: raise ValueError("taxonomy differs from scorer codebook")
     base_train,valid,evaluation=(_read(source/f"{name}.jsonl") for name in ("train","valid","eval"))
+    supplemental_valid_path=source/"supplemental-valid-v0.6.jsonl"
+    supplemental_valid=_read(supplemental_valid_path) if supplemental_valid_path.exists() else []
+    for index,row in enumerate(supplemental_valid,1):
+        messages=row.get("messages")
+        if not isinstance(messages,list) or len(messages)!=3:
+            raise ValueError(f"{supplemental_valid_path.name}:{index}: expected three chat messages")
+        if [message.get("role") for message in messages]!=["system","user","assistant"]:
+            raise ValueError(f"{supplemental_valid_path.name}:{index}: roles must be system, user, assistant")
+    valid=valid+supplemental_valid
     supplemental_names=[
         "supplemental-train-v0.5.jsonl",
         "supplemental-train-v0.6-mapping.jsonl",
@@ -337,12 +346,12 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
       "counts":{"train":len(prepared_train),"valid":len(prepared_valid),"eval":len(prepared_eval),"total":total},
       "categories":sorted(CODES_BY_CATEGORY),"diagnosis_code_taxonomy":"diagnosis-codes.json",
       "distribution":distribution,"code_distribution":code_distribution,
-      "label_normalization":{"corrections":dict(sorted(normalisation_report.items())),"scope":["train","supplemental","valid"],"heldout_eval_modified":False},
-      "supplemental_training":{"files":[path.name for path in supplemental_files],
+      "label_normalization":{"corrections":dict(sorted(normalisation_report.items())),"scope":["train","supplemental_train","valid","supplemental_valid"],"heldout_eval_modified":False},
+      "supplemental_validation":{"file":supplemental_valid_path.name if supplemental_valid else None,"cases":len(supplemental_valid),"validation_only":True},\n      "supplemental_training":{"files":[path.name for path in supplemental_files],
        "base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),
        "supplemental_cases_are_synthetic":True,"supplemental_cases_are_train_only":True},
       "augmentation":{"source_train_cases":len(train),"generated_train_variants":generated,"target_examples_per_diagnosis_code":train_per_code,
-       "validation_augmented":False,"evaluation_augmented":False,
+       "validation_augmented":False,"validation_supplemented":bool(supplemental_valid),"evaluation_augmented":False,
        "method":"Consistent node renaming, safe sample substitutions and position variations; prepared training examples are deterministically shuffled.",
        "warning":"Variants preserve the original label/patch; they are not independent new incidents or root-cause patterns."},
       "case_id_policy":"Opaque case-<16 hexadecimal characters>; label-bearing identifiers are rejected.",
@@ -355,7 +364,7 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     (out/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     (out/"DATASET_CARD.md").write_text(f"# Prepared dataset v0.6\n\n- Base source training cases: {len(base_train)}\n- Supplemental authored training cases: {len(supplemental)}\n- Training: {len(prepared_train)} ({train_per_code} per code)\n- Validation: {len(prepared_valid)} (unchanged)\n- Held-out evaluation: {len(prepared_eval)} (unchanged)\n- Generated training variants: {generated}\n\nTraining variants are semantic-preserving transformations, not newly observed incidents. The held-out set is not augmented; case IDs are opaque.\n",encoding="utf-8")
     if (source/"archive").exists(): shutil.copytree(source/"archive",out/"archive",dirs_exist_ok=True)
-    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"label_normalization":dict(sorted(normalisation_report.items())),"note":"Training/validation labels were audited; legacy held-out evaluation was untouched."}
+    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"label_normalization":dict(sorted(normalisation_report.items())),"supplemental_validation_cases":len(supplemental_valid),"note":"Training/validation labels were audited; legacy held-out evaluation was untouched."}
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=48)
