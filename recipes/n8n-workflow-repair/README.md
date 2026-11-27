@@ -2,16 +2,16 @@
 
 Fine-tune Qwen3-1.7B to classify n8n failures, identify evidence-supported root causes and propose minimal JSON Patch repairs.
 
-## Dataset v0.4
+## Dataset v0.5 training corpus
 
-The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares **1,536 training examples (32 per diagnosis code)** by retaining all 640 source cases and adding 896 deterministic, meaning-preserving variants. These are augmentation examples, not 1,536 independent incidents. Validation and evaluation are not augmented.
+The v0.4 source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. v0.5 adds **216 independently authored synthetic training scenarios** in `data/supplemental-train-v0.5.jsonl`: 72 data-mapping cases and 36 each for item linking, node configuration, Code-node behavior and execution/API failures. Colab retains all 856 source training cases and adds deterministic variants to reach **1,920 training examples (40 per diagnosis code)**. The new scenarios are synthetic, not observed incidents; generated variants are not independent root-cause cases. Validation and held-out evaluation remain unchanged and are never augmented.
 
 | Prepared split | Examples | Distribution |
 |---|---:|---|
-| Training | 1,536 | 32 per code; 192 per category |
+| Training | 1,920 | 40 per code; 240 per category |
 | Validation | 128 | 16 per category |
 | Held-out evaluation | 192 | 24 per category; 4 per code |
-| **Total** | **1,856** | |
+| **Total** | **2,240** | |
 
 There are 48 canonical diagnosis codes, six per category, described in `data/diagnosis-codes.json`.
 
@@ -21,9 +21,9 @@ Earlier validation/evaluation `case_id` values contained their target category a
 
 ## Training augmentation
 
-The preparation script keeps all 640 source cases and adds 896 controlled variants. It consistently renames workflow nodes throughout expressions, connections and patches; changes safe sample identifiers/domains; and varies positions where present. The original root-cause label and patch are preserved.
+v0.5 retains the original 640 training cases plus 216 new train-only scenarios. Data-mapping additions cover missing/null fields, zero-based array indexing, type conversion, falsy-value defaults, string-to-boolean parsing and incorrect nested paths. The other additions target ambiguous item selection and lineage, HTTP configuration, Code-node output/mode errors, and API payload/retry/timeout/outage distinctions.
 
-These are augmentation variants, **not 896 independent new incidents**. They balance labels and expose the model to different surface forms; they do not add 896 new root-cause patterns. The 192-case held-out test set is kept unchanged apart from opaque IDs.
+The remaining **1,064 generated examples** are controlled variants: consistent node renaming across expressions/connections/patches, safe identifier/domain substitutions and position changes. These variants preserve the original label and patch; they are not independent incidents. The 128 validation and 192 held-out evaluation cases remain unchanged apart from opaque-ID normalization.
 
 ## Evaluation
 
@@ -38,7 +38,7 @@ The notebook uses TRL 0.22.2's conversational prompt/completion format with `com
 
 ## Fine-tuning configuration
 
-Qwen3-1.7B; 4-bit QLoRA; LoRA rank 16 / alpha 32; learning rate 2e-5; three epochs; 2048-token context; batch size 1 with gradient accumulation 8. GGUF/Ollama export is disabled.
+Qwen3-1.7B; 4-bit QLoRA; LoRA rank 16 / alpha 32; learning rate 1.5e-5; two epochs; 2048-token context; batch size 1 with gradient accumulation 8 (480 optimizer steps). The best checkpoint is selected by validation loss. GGUF/Ollama export and download remain disabled.
 
 ## Colab
 
