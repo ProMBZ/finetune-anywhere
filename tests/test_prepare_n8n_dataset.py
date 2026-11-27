@@ -93,9 +93,9 @@ def test_v06_supplemental_training_coverage_and_schema():
     assert category_counts == {
         "data_mapping": 144,
         "item_linking": 72,
-        "node_configuration": 72,
+        "node_configuration": 78,
         "code_node": 72,
-        "execution_api": 72,
+        "execution_api": 66,
         "expression": 36,
         "workflow_structure": 36,
         "credentials": 36,
@@ -134,6 +134,20 @@ def test_challenge_eval_has_one_heldout_case_per_canonical_code():
         prompt = json.loads(row["messages"][1]["content"])
         answer = json.loads(row["messages"][2]["content"])
         counts[answer["diagnosis_code"]] += 1
+        assert prompt.get("execution_error", "").strip()
+        assert prompt.get("expected_behavior", "").strip()
+        assert answer.get("faulty_node", "").strip()
+        assert answer.get("root_cause", "").strip()
+        assert isinstance(answer.get("patch"), list)
+        assert any(node["name"] == answer["faulty_node"] for node in prompt["workflow"]["nodes"])
+        if answer["diagnosis_code"] in {
+            "REQUEST_TIMEOUT", "UPSTREAM_SERVICE_UNAVAILABLE", "DNS_OR_CONNECTION_FAILURE",
+            "ITEM_LINEAGE_UNAVAILABLE", "AUTHENTICATION_REJECTED", "PERMISSION_INSUFFICIENT",
+            "CREDENTIAL_REFERENCE_MISSING", "OAUTH_CREDENTIAL_EXPIRED",
+            "API_KEY_REVOKED_OR_MISSING", "SECRET_VALUE_REDACTED",
+        }:
+            assert answer["patch"] == []
+            assert answer["needs_human_review"] is True
         prompt.pop("case_id", None)
         fingerprint = json.dumps(prompt, sort_keys=True, ensure_ascii=False)
         assert fingerprint not in fingerprints
