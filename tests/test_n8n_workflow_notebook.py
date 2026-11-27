@@ -100,3 +100,10 @@ def test_step_8_uses_compact_codebook_and_adaptive_context_budget():
     assert "token_length(row['messages'], add_generation_prompt=False)" in dataset
     assert "add_generation_prompt=(split == 'eval')" not in dataset
     assert "Inspect the longest source prompt/target rather than silently truncating it." in dataset
+
+def test_step_8_replaces_duplicate_taxonomy_instead_of_appending_it():
+    dataset = cell_text(notebook(), 16)
+    assert "BASE_SYSTEM_INSTRUCTION = (" in dataset
+    assert "row['messages'][0]['content'] = BASE_SYSTEM_INSTRUCTION" in dataset
+    assert "row['messages'][0]['content'] += " not in dataset
+    assert "Combined system instruction characters:" in dataset
