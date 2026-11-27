@@ -11,8 +11,8 @@ def test_preparation_balances_training_but_keeps_heldout_splits(tmp_path):
     assert report["status"]=="prepared"
     assert report["counts"]=={"train":1920,"valid":128,"eval":192,"total":2240}
     checked=validate_dataset(output)
-    assert checked["status"]=="passed" and checked["unique_case_ids"]==1184
-    assert checked["unique_case_fingerprints"]==1184
+    assert checked["status"]=="passed" and checked["unique_case_ids"]==2240
+    assert checked["unique_case_fingerprints"]==2240
     manifest=__import__("json").loads((output/"manifest.json").read_text())
     assert set(manifest["code_distribution"]["train"].values())=={40}
     assert manifest["counts"]["eval"]==192
