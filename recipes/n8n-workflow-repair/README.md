@@ -9,9 +9,9 @@ The v0.4 source corpus contains 640 training, 128 validation and 192 held-out ev
 | Prepared split | Examples | Distribution |
 |---|---:|---|
 | Training | 2,304 | 48 per code; 288 per category |
-| Validation | 130 | 16 base cases per category plus 2 timeout-abstention cases |
+| Validation | 132 | 128 base cases plus 2 timeout-abstention and 2 paired-item index cases |
 | Held-out evaluation | 192 | 24 per category; 4 per code |
-| Legacy prepared total | 2,626 | Training + validation + original held-out evaluation |
+| Legacy prepared total | 2,628 | Training + validation + original held-out evaluation |
 
 There are 48 canonical diagnosis codes, six per category, described in `data/diagnosis-codes.json`.
 
@@ -21,7 +21,7 @@ Earlier validation/evaluation `case_id` values contained their target category a
 
 ## Training augmentation
 
-v0.6 retains all original source cases, adds 540 train-only scenarios and corrects audited label collisions in training/validation. In particular, a value at a different nested path is not labelled missing; missing pairedItem metadata is distinguished from an incorrect pairedItem index; and an unexplained request timeout is taught as a safe abstention rather than a guessed timeout increase. The two additional validation cases teach that timeout-abstention boundary.
+v0.6 retains all original source cases, adds 540 train-only scenarios and corrects audited label collisions in training/validation. In particular, a value at a different nested path is not labelled missing; missing pairedItem metadata is distinguished from an incorrect pairedItem index; and an unexplained request timeout is taught as a safe abstention rather than a guessed timeout increase. Four additional validation cases teach two boundaries: unexplained timeouts must abstain, and incorrect pairedItem indexes must be corrected without confusing them with missing metadata.
 
 The pipeline fills remaining per-code slots with controlled node-renaming and safe identifier/domain variations, then deterministically shuffles the training rows. These variants preserve their source label and patch; they are not independent incidents. The original 192-case held-out evaluation is not modified. A separate **48-case challenge evaluation** has one fresh synthetic case per diagnosis code and is never used for training or validation.
 
