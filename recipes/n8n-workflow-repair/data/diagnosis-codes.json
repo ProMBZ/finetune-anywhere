@@ -9,7 +9,7 @@
       },
       {
         "code": "NODE_REFERENCE_INVALID",
-        "definition": "Expression refers to a node name that does not exist in the supplied workflow."
+        "definition": "An expression references a node name that is absent from the supplied workflow and the evidence does not establish a safe replacement source; do not invent a node name."
       },
       {
         "code": "PROPERTY_PATH_INVALID",
@@ -31,7 +31,7 @@
     "data_mapping": [
       {
         "code": "FIELD_MISSING_OR_NULL",
-        "definition": "Required property can be absent or null and needs an evidence-supported fallback."
+        "definition": "The required source property is genuinely absent or null at the intended path; the payload does not contain a supported alternative value path."
       },
       {
         "code": "ARRAY_INDEX_INCORRECT",
@@ -39,7 +39,7 @@
       },
       {
         "code": "TYPE_COERCION_REQUIRED",
-        "definition": "Supplied value type differs from the explicit downstream or API type requirement."
+        "definition": "A value mapped within the workflow has the wrong type for the explicit receiving field contract; this is not an HTTP API request-schema field mismatch."
       },
       {
         "code": "DEFAULT_OPERATOR_LOSES_FALSY_VALUE",
@@ -51,17 +51,17 @@
       },
       {
         "code": "NESTED_FIELD_PATH_MISMATCH",
-        "definition": "Mapping path does not match the nested structure in the supplied JSON."
+        "definition": "The requested value is present in the supplied payload at a different nested JSON path than the expression reads; this is not an absent or null source field."
       }
     ],
     "item_linking": [
       {
         "code": "ITEM_REFERENCE_AMBIGUOUS",
-        "definition": "The .item reference cannot resolve one upstream item because multiple items are possible."
+        "definition": "The .item reference cannot uniquely identify one item among multiple upstream items; use first()/last() only when supplied ordering or evidence establishes the intended item, otherwise request review."
       },
       {
         "code": "PAIRED_ITEM_METADATA_MISSING",
-        "definition": "Transformed output items lack pairedItem metadata needed for downstream source-item linking."
+        "definition": "A one-to-one Code node transformation creates new output items but omits pairedItem metadata entirely, so n8n cannot link outputs to their corresponding inputs."
       },
       {
         "code": "WRONG_ITEM_SELECTOR",
@@ -73,11 +73,11 @@
       },
       {
         "code": "UPSTREAM_NODE_REFERENCE_WRONG",
-        "definition": "Expression names the wrong upstream node although the intended node exists."
+        "definition": "An expression refers to the wrong source node even though the actual connected upstream node is explicitly present in the workflow and can be identified from the supplied graph."
       },
       {
         "code": "ITEM_LINEAGE_UNAVAILABLE",
-        "definition": "Paired-item metadata is unavailable. Use a single-item selector such as .first() only when the supplied evidence explicitly guarantees exactly one upstream item; otherwise abstain and request human review."
+        "definition": "Paired-item lineage is absent or unavailable and the supplied evidence does not establish a unique safe key, ordering or one-to-one mapping; abstain and request human review."
       }
     ],
     "node_configuration": [
@@ -99,7 +99,7 @@
       },
       {
         "code": "TIMEOUT_TOO_SHORT",
-        "definition": "Timeout is shorter than an explicit service response-time requirement."
+        "definition": "A numeric timeout is demonstrably below an explicit endpoint response-time requirement supplied in the task; only then is a bounded timeout correction supported."
       },
       {
         "code": "WAIT_DURATION_MISMATCH",
@@ -155,7 +155,7 @@
       },
       {
         "code": "PAIRED_ITEM_NOT_PRESERVED",
-        "definition": "Transformation changes item lineage but omits the required pairedItem references."
+        "definition": "A pairedItem reference is present but points to the wrong source input index or fails to preserve the correct relationship after reordering/filtering; this is distinct from missing metadata."
       }
     ],
     "execution_api": [
@@ -169,7 +169,7 @@
       },
       {
         "code": "API_PAYLOAD_TYPE_MISMATCH",
-        "definition": "API contract specifies a required value type that differs from the request value."
+        "definition": "An HTTP request body field violates the explicitly supplied external API schema type, such as sending numeric text where the API requires an integer."
       },
       {
         "code": "UPSTREAM_SERVICE_UNAVAILABLE",
@@ -181,7 +181,7 @@
       },
       {
         "code": "REQUEST_TIMEOUT",
-        "definition": "Explicit service timing requirement exceeds the configured request timeout."
+        "definition": "A request timeout is observed, but no verified endpoint response-time requirement or owner-approved timeout value proves that the configured timeout is too short; do not guess a larger value and request human review."
       }
     ],
     "credentials": [
