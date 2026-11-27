@@ -109,7 +109,7 @@ def test_step_8_replaces_duplicate_taxonomy_instead_of_appending_it():
     assert "Combined system instruction characters:" in dataset
 
 
-def test_notebook_uses_v05_supplemental_training_and_records_its_hash():
+def test_notebook_uses_v06_dataset_and_independent_challenge_evaluation():
     book = notebook()
     dataset = cell_text(book, 16)
     report = next(
@@ -119,10 +119,18 @@ def test_notebook_uses_v05_supplemental_training_and_records_its_hash():
     )
     config = (ROOT / "recipes/n8n-workflow-repair/config.yaml").read_text(encoding="utf-8")
 
-    assert "prepared-dataset-v0.5" in dataset
-    assert "train_per_code=40" in dataset
+    assert "prepared-dataset-v0.6" in dataset
+    assert "train_per_code=48" in dataset
     assert "learning_rate: 0.000015" in config
     assert "epochs: 2" in config
     assert "'training_data_version': preparation_report['version']" in report
     assert "'supplemental_train_sha256'" in report
+    assert "'supplemental_valid_sha256'" in report
+    assert "'challenge_eval_finetuned_scores'" in report
+    assert "'challenge_eval_sha256'" in report
+    assert "challenge-comparison.json" in report
+    assert "challenge-eval-v0.6.jsonl" in dataset
+    assert "raw['challenge_eval'] = challenge_rows" in dataset
+    assert "challenge_eval_prompts" in dataset
+    assert "'challenge_eval_base_scores'" in report
 
