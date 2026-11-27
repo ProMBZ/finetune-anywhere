@@ -75,3 +75,18 @@ def test_gguf_export_remains_disabled():
     assert any(line.strip() == "DOWNLOAD_GGUF = False" for line in download.splitlines())
     assert "if DOWNLOAD_GGUF:" in download
     assert "files.download(str(file))" in download
+
+
+def test_settings_cell_defines_all_step_4_and_training_inputs():
+    book = notebook()
+    settings = cell_text(book, 6)
+    drive_backup = cell_text(book, 8)
+
+    assert 'RECIPE = "n8n-workflow-repair"' in settings
+    assert 'DATA_DIR = recipe_dir / "data"' in settings
+    assert 'config = yaml.safe_load(' in settings
+    assert 'registry = yaml.safe_load(' in settings
+    assert 'MODEL_ALIAS = config["model"]' in settings
+    assert 'model_entry = registry["models"][MODEL_ALIAS]' in settings
+    assert 'RUN_NAME = RECIPE +' in settings
+    assert 'OUTPUT = OUTPUT_ROOT / RUN_NAME' in drive_backup
