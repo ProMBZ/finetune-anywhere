@@ -143,8 +143,8 @@ def test_evaluation_evidence_uses_real_newlines():
     book = notebook()
     code = code_cells(book)
 
-    challenge_line = r"challenge_comparison_md = '\\n'.join(challenge_lines) + '\\n'"
-    report_line = r"(OUTPUT / 'run.json').write_text(json.dumps(report, indent=2) + '\\n')"
+    challenge_line = r"challenge_comparison_md = '\n'.join(challenge_lines) + '\n'"
+    report_line = r"(OUTPUT / 'run.json').write_text(json.dumps(report, indent=2) + '\n')"
 
     # Check exact executable lines rather than broad markers that also occur
     # in later report/export cells.
