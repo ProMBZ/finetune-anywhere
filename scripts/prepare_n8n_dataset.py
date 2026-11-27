@@ -269,6 +269,9 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
         "supplemental-train-v0.6-node-config.jsonl",
         "supplemental-train-v0.6-code.jsonl",
         "supplemental-train-v0.6-api.jsonl",
+        "supplemental-train-v0.6-expression.jsonl",
+        "supplemental-train-v0.6-workflow.jsonl",
+        "supplemental-train-v0.6-credentials.jsonl",
     ]
     supplemental_files=[source/name for name in supplemental_names if (source/name).exists()]
     supplemental=[]
