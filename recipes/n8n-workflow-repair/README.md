@@ -4,7 +4,7 @@ Fine-tune Qwen3-1.7B to classify n8n failures, identify evidence-supported root 
 
 ## Dataset v0.6 training and evaluation
 
-The v0.4 source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. v0.5/v0.6 add **540 independently authored synthetic training scenarios** across all eight categories. Data mapping receives 144 new cases; item linking, node configuration, Code-node behavior and execution/API failures receive 72 each; expression, workflow structure and credentials receive 36 each. Colab audits legacy label collisions, retains the 1,180 source training cases and balances the result to **2,304 training examples (48 per diagnosis code)**. Deterministic variants are generated only to fill remaining per-code slots and are not independent incidents.
+The v0.4 source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. v0.5/v0.6 add **540 independently authored synthetic training scenarios** across all eight categories. Data mapping receives 144 new cases; item linking and Code-node behavior receive 72 each; node configuration receives 78 and execution/API failures receive 66; expression, workflow structure and credentials receive 36 each. Colab audits legacy label collisions, retains the 1,180 source training cases and balances the result to **2,304 training examples (48 per diagnosis code)**. Deterministic variants are generated only to fill remaining per-code slots and are not independent incidents.
 
 | Prepared split | Examples | Distribution |
 |---|---:|---|
@@ -32,7 +32,7 @@ The pipeline fills remaining per-code slots with controlled node-renaming and sa
 - Human-review decision agreement is separated from safe-abstention precision and recall.
 - Gold-patch match is strict and can penalize alternative valid repairs.
 - Patch applicability checks JSON Patch against synthetic fixtures; it does not prove execution inside n8n.
-- Both base and fine-tuned models receive the same retrieved documentation excerpts and held-out prompts.
+- Both base and fine-tuned models receive the same retrieved documentation excerpts and generation settings. The separate challenge set has one case per diagnosis code, so it is a broad smoke test, not a precise category-level statistical estimate.
 
 The notebook uses TRL 0.22.2's conversational prompt/completion format with `completion_only_loss=True`, so loss is applied to assistant diagnosis/repair targets without relying on assistant-token masks in Qwen3's stock chat template. The best adapter checkpoint is selected by validation loss.
 
