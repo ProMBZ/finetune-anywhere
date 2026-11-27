@@ -1,30 +1,44 @@
-# Dataset card: n8n workflow diagnosis and repair v0.4
+# Dataset card: n8n workflow diagnosis and repair v0.6
 
-The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares **1,536 training examples (32 per canonical diagnosis code)** by retaining all 640 source cases and adding 896 deterministic, meaning-preserving variants. These are not 1,536 independent incidents. Validation and held-out evaluation are not augmented.
+## Prepared training and validation data
+
+The v0.4 source corpus contains 640 training, 128 validation and 192 legacy held-out evaluation cases. v0.5/v0.6 add 540 independently authored synthetic training scenarios across the eight canonical categories.
+
+| Supplemental category | New cases |
+|---|---:|
+| Data mapping | 144 |
+| Item linking | 72 |
+| Node configuration | 78 |
+| Code node | 72 |
+| Execution API | 66 |
+| Expression | 36 |
+| Workflow structure | 36 |
+| Credentials | 36 |
+| **Total supplemental training** | **540** |
+
+The preparation script normalizes a small number of legacy label-boundary errors, then retains the 1,180 source/supplemental training cases and balances all 48 diagnosis codes to 48 examples each. It creates deterministic variants only to fill remaining per-code slots. These variants are not independent incidents or new root causes.
 
 | Prepared split | Examples | Distribution |
 |---|---:|---|
-| Training | 1,536 | 32 per diagnosis code; 192 per category |
-| Validation | 128 | 16 per category; 2–3 per diagnosis code |
-| Held-out evaluation | 192 | 24 per category; 4 per diagnosis code |
-| **Total** | **1,856** | |
+| Training | 2,304 | 48 per diagnosis code; 288 per category |
+| Validation | 132 | 128 original + 4 supplemental |
+| Legacy held-out evaluation | 192 | 24 per category; 4 per diagnosis code |
+| **Prepared total** | **2,628** | Excludes separate challenge evaluation |
 
-There are 48 canonical diagnosis codes: six in each of eight categories. Exact values and definitions are documented in `diagnosis-codes.json`.
+## Separate challenge evaluation
 
-## Critical v0.3 correction: case-ID target leakage
+`challenge-eval-v0.6.jsonl` contains 48 independently authored synthetic cases, one for each canonical diagnosis code. It is kept out of training and validation. It is evaluated separately from the original 192-case held-out benchmark. One case per code is a useful challenge smoke test, but it is not a statistically precise per-code or per-category estimate.
 
-The earlier validation/evaluation identifiers encoded the target category and diagnosis code (for example, an ID containing `expression_prefix_missing`). Since `case_id` is part of the user prompt, this disclosed the answer. v0.4 replaces identifiers in every committed split with opaque IDs and adds validator checks to reject semantic IDs. Prompt uniqueness is also checked after removing the ID field.
+The original `eval.jsonl` is preserved unchanged. Neither held-out evaluation set is augmented or used for training.
 
-## Training augmentation
+## Data quality and limitations
 
-The preparation script retains all 640 committed training cases and adds 896 controlled variations to balance the 48 diagnosis codes at 32 cases each. It consistently renames workflow nodes across expressions, connections and patches; changes safe sample identifiers/domains; and varies node positions where present. The original label and patch are preserved.
+- Every prompt uses an opaque case ID; labels are not encoded in IDs.
+- Prompt fingerprints are checked after removing the case ID to catch exact duplicates and cross-split leakage.
+- Diagnosis code and category are checked against the canonical taxonomy.
+- JSON Patch paths are checked against synthetic workflow fixtures; this does not execute a workflow in a live n8n instance.
+- Credential/secret, unresolved lineage, network/DNS failure, confirmed outage and unsupported runtime-timeout cases require human review rather than speculative patches.
+- All examples are synthetic. The generated augmentation variants preserve their source labels and patches; they do not represent independent real-world incidents.
+- The held-out sets are small and synthetic. Their scores do not establish production reliability.
 
-These are **augmentation variants, not 896 newly discovered root causes or independent real-world incidents**. They improve representation and surface-form variation, but do not replace independently authored cases.
-
-## Evaluation, retrieval and training
-
-Validation and evaluation remain unaugmented apart from opaque IDs. The evaluation contains four cases per diagnosis code, so per-code estimates remain noisy. The notebook uses TRL 0.22.2's conversational prompt/completion format with `completion_only_loss=True`, so loss is applied to assistant diagnosis/repair targets without requiring assistant-token generation masks in the stock Qwen3 template. The same retrieved official documentation context is used for each split and for both base/fine-tuned evaluation.
-
-Malformed outputs count as incorrect in full diagnosis-code validity and abstention-recall denominators. Reports include exact and macro code accuracy, category accuracy, confusion matrix, human-review decision accuracy and safe-abstention precision/recall. Patch applicability is a structural JSON fixture check only; it does not execute a live n8n workflow.
-
-All examples are synthetic. No dataset size or synthetic score guarantees 100% real-world accuracy. Never modify credentials or apply generated patches automatically to production.
+The notebook uses conversational prompt/completion training with `completion_only_loss=True`; validation loss selects the best checkpoint. Base and fine-tuned evaluation use the same retrieved official-document context and generation settings. GGUF export/download remain disabled.
