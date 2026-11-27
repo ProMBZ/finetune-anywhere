@@ -9,7 +9,7 @@
       },
       {
         "code": "NODE_REFERENCE_INVALID",
-        "definition": "An expression references a node name that is absent from the supplied workflow and the evidence does not establish a safe replacement source; do not invent a node name."
+        "definition": "The expression refers to a node name that is absent from the supplied workflow. Repair it only when the intended source node is explicitly identifiable from the workflow and task; otherwise abstain and request review."
       },
       {
         "code": "PROPERTY_PATH_INVALID",
@@ -73,7 +73,7 @@
       },
       {
         "code": "UPSTREAM_NODE_REFERENCE_WRONG",
-        "definition": "An expression refers to the wrong source node even though the actual connected upstream node is explicitly present in the workflow and can be identified from the supplied graph."
+        "definition": "The expression names an existing but incorrect upstream node even though the intended connected source node is explicitly identifiable in the supplied workflow."
       },
       {
         "code": "ITEM_LINEAGE_UNAVAILABLE",
