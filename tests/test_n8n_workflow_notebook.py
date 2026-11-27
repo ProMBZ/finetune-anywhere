@@ -90,3 +90,13 @@ def test_settings_cell_defines_all_step_4_and_training_inputs():
     assert 'model_entry = registry["models"][MODEL_ALIAS]' in settings
     assert 'RUN_NAME = RECIPE +' in settings
     assert 'OUTPUT = OUTPUT_ROOT / RUN_NAME' in drive_backup
+
+def test_step_8_uses_compact_codebook_and_adaptive_context_budget():
+    dataset = cell_text(notebook(), 16)
+
+    assert "COMPACT_CODE_DEFINITIONS" in dataset
+    assert "missing_definitions = allowed_codes - set(COMPACT_CODE_DEFINITIONS)" in dataset
+    assert "retrieval_attempts = [(2, 280), (1, 120), (1, 60), (0, 0)]" in dataset
+    assert "token_length(row['messages'], add_generation_prompt=False)" in dataset
+    assert "add_generation_prompt=(split == 'eval')" not in dataset
+    assert "Inspect the longest source prompt/target rather than silently truncating it." in dataset
