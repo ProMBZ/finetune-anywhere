@@ -23,3 +23,10 @@ def test_preparation_does_not_overwrite_existing_run(tmp_path):
     try: prepare_dataset(source,output,train_per_code=18)
     except FileExistsError: pass
     else: raise AssertionError("must not overwrite existing experiment data")
+
+def test_node_renaming_does_not_rewrite_new_replacement_text():
+    from prepare_n8n_dataset import _rewrite_tree
+    value={"nodes":["HTTP Request","HTTP"],"expression":"$('HTTP Request').item + $('HTTP').item"}
+    renamed=_rewrite_tree(value,{"HTTP Request":"HTTP Request [variant 1]","HTTP":"HTTP [variant 2]"})
+    assert renamed["nodes"]==["HTTP Request [variant 1]","HTTP [variant 2]"]
+    assert renamed["expression"]=="$('HTTP Request [variant 1]').item + $('HTTP [variant 2]').item"

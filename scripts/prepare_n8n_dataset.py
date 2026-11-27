@@ -13,19 +13,22 @@ def _opaque_id(split: str, ordinal: int, origin: str, variant: int=0) -> str:
     return "case-"+hashlib.sha256(raw).hexdigest()[:16]
 
 def _rewrite_tree(value: Any, replacements: dict[str,str]) -> Any:
+    """Replace each original node name once, without recursively rewriting new names."""
     ordered=sorted(replacements.items(),key=lambda pair:len(pair[0]),reverse=True)
-    if isinstance(value,dict):
-        result={}
-        for key,child in value.items():
-            new_key=key
-            for old,new in ordered: new_key=new_key.replace(old,new)
-            if new_key in result: raise ValueError(f"node rename produced duplicate key: {new_key}")
-            result[new_key]=_rewrite_tree(child,replacements)
-        return result
-    if isinstance(value,list): return [_rewrite_tree(child,replacements) for child in value]
-    if isinstance(value,str):
-        for old,new in ordered: value=value.replace(old,new)
-    return value
+    pattern=re.compile("|".join(re.escape(old) for old,_ in ordered)) if ordered else None
+    def rewrite(item: Any) -> Any:
+        if isinstance(item,dict):
+            result={}
+            for key,child in item.items():
+                new_key=pattern.sub(lambda match:replacements[match.group(0)],key) if pattern else key
+                if new_key in result: raise ValueError(f"node rename produced duplicate key: {new_key}")
+                result[new_key]=rewrite(child)
+            return result
+        if isinstance(item,list): return [rewrite(child) for child in item]
+        if isinstance(item,str) and pattern:
+            return pattern.sub(lambda match:replacements[match.group(0)],item)
+        return item
+    return rewrite(value)
 
 def _replace_domains(value: Any, variant: int) -> Any:
     if isinstance(value,dict): return {k:_replace_domains(v,variant) for k,v in value.items()}
