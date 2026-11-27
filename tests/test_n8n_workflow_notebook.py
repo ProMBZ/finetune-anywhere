@@ -150,4 +150,4 @@ def test_evaluation_evidence_uses_real_newlines():
     # in later report/export cells.
     all_lines = [line.strip() for source in code for line in source.splitlines()]
     assert all_lines.count(challenge_line) == 1
-    assert all_lines.count(report_line) == 1
+    assert all_lines.count(report_line) == 2  # normal save and optional export update
