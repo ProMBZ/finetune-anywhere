@@ -1,8 +1,8 @@
 # Dataset card: n8n workflow diagnosis and repair v0.4
 
-The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares a balanced training set of **1,536 cases (32 per canonical diagnosis code)** by retaining all 640 source cases and adding 896 deterministic, meaning-preserving variants. Validation and held-out evaluation are not augmented.
+The committed source corpus contains 640 training, 128 validation and 192 held-out evaluation cases. Colab prepares **1,536 training examples (32 per canonical diagnosis code)** by retaining all 640 source cases and adding 896 deterministic, meaning-preserving variants. These are not 1,536 independent incidents. Validation and held-out evaluation are not augmented.
 
-| Prepared split | Cases | Distribution |
+| Prepared split | Examples | Distribution |
 |---|---:|---|
 | Training | 1,536 | 32 per diagnosis code; 192 per category |
 | Validation | 128 | 16 per category; 2–3 per diagnosis code |
@@ -23,7 +23,7 @@ These are **augmentation variants, not 896 newly discovered root causes or indep
 
 ## Evaluation, retrieval and training
 
-Validation and evaluation remain unaugmented apart from opaque IDs. The evaluation contains four cases per diagnosis code, so per-code estimates remain noisy. TRL 0.22.2 supports assistant-only loss for conversational datasets; the notebook trains on assistant diagnosis/repair responses only. The same retrieved official documentation context is used for each split and for both base/fine-tuned evaluation.
+Validation and evaluation remain unaugmented apart from opaque IDs. The evaluation contains four cases per diagnosis code, so per-code estimates remain noisy. The notebook uses TRL 0.22.2's conversational prompt/completion format with `completion_only_loss=True`, so loss is applied to assistant diagnosis/repair targets without requiring assistant-token generation masks in the stock Qwen3 template. The same retrieved official documentation context is used for each split and for both base/fine-tuned evaluation.
 
 Malformed outputs count as incorrect in full diagnosis-code validity and abstention-recall denominators. Reports include exact and macro code accuracy, category accuracy, confusion matrix, human-review decision accuracy and safe-abstention precision/recall. Patch applicability is a structural JSON fixture check only; it does not execute a live n8n workflow.
 
