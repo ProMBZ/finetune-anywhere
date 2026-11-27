@@ -34,15 +34,15 @@ def test_v06_preparation_balances_training_and_preserves_heldout_splits(tmp_path
     assert report["version"] == "0.6.0-prepared"
     assert report["counts"] == {
         "train": 2304,
-        "valid": 130,
+        "valid": 132,
         "eval": 192,
-        "total": 2626,
+        "total": 2628,
     }
 
     checked = validate_dataset(output)
     assert checked["status"] == "passed"
-    assert checked["unique_case_ids"] == 2626
-    assert checked["unique_case_fingerprints"] == 2626
+    assert checked["unique_case_ids"] == 2628
+    assert checked["unique_case_fingerprints"] == 2628
 
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     assert set(manifest["code_distribution"]["train"].values()) == {48}
@@ -50,7 +50,7 @@ def test_v06_preparation_balances_training_and_preserves_heldout_splits(tmp_path
     assert manifest["supplemental_training"]["base_source_train_cases"] == 640
     assert manifest["supplemental_training"]["supplemental_train_cases"] == 540
     assert len(manifest["supplemental_training"]["files"]) == 9
-    assert manifest["supplemental_validation"]["cases"] == 2
+    assert manifest["supplemental_validation"]["cases"] == 4
     assert manifest["supplemental_validation"]["validation_only"] is True
     assert manifest["label_normalization"]["heldout_eval_modified"] is False
     assert manifest["augmentation"]["evaluation_augmented"] is False
@@ -108,14 +108,21 @@ def test_v06_supplemental_training_coverage_and_schema():
     assert len(diagnosis_counts) == 48
 
 
-def test_validation_timeout_supplement_is_abstention_only():
+def test_validation_supplement_covers_timeout_abstention_and_paired_item_index():
     rows = read_jsonl(DATA_DIR / "supplemental-valid-v0.6.jsonl")
-    assert len(rows) == 2
+    assert len(rows) == 4
+    counts = Counter()
     for row in rows:
         answer = json.loads(row["messages"][-1]["content"])
-        assert answer["diagnosis_code"] == "REQUEST_TIMEOUT"
-        assert answer["patch"] == []
-        assert answer["needs_human_review"] is True
+        counts[answer["diagnosis_code"]] += 1
+        if answer["diagnosis_code"] == "REQUEST_TIMEOUT":
+            assert answer["patch"] == []
+            assert answer["needs_human_review"] is True
+        else:
+            assert answer["diagnosis_code"] == "PAIRED_ITEM_NOT_PRESERVED"
+            assert answer["patch"]
+            assert answer["needs_human_review"] is False
+    assert counts == {"REQUEST_TIMEOUT": 2, "PAIRED_ITEM_NOT_PRESERVED": 2}
 
 
 def test_challenge_eval_has_one_heldout_case_per_canonical_code():
