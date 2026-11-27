@@ -26,7 +26,7 @@ jobs:
         run: python -m compileall -q scripts tests
       - name: Run n8n repair tests
         run: |
-          pytest -q \
+          python -m pytest -q \
             tests/test_score_n8n_repairs.py \
             tests/test_validate_n8n_dataset.py \
             tests/test_n8n_docs_retriever.py \
