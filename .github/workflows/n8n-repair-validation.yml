@@ -1,0 +1,35 @@
+name: n8n repair dataset and notebook validation
+
+on:
+  push:
+    branches:
+      - project-01-n8n-workflow-repair
+  pull_request:
+    branches:
+      - main
+      - project-01-n8n-workflow-repair
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip pytest pyyaml
+      - name: Compile project Python files
+        run: python -m compileall -q scripts tests
+      - name: Run n8n repair tests
+        run: |
+          pytest -q \
+            tests/test_score_n8n_repairs.py \
+            tests/test_validate_n8n_dataset.py \
+            tests/test_n8n_docs_retriever.py \
+            tests/test_prepare_n8n_dataset.py \
+            tests/test_n8n_workflow_notebook.py
