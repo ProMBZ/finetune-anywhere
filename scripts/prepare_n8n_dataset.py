@@ -140,7 +140,7 @@ def _normalise_legacy_labels(rows: list[dict[str, Any]], split: str) -> tuple[li
             ]
             candidate_paths = []
             for value in patch_values:
-                candidate_paths.extend(re.findall(r"\\$json\\.([A-Za-z0-9_$?.\\[\\]]+)", value))
+                candidate_paths.extend(re.findall(r"\$json\.([A-Za-z0-9_$?.\[\]]+)", value))
             existing_path = next(
                 (
                     path for path in reversed(candidate_paths)
