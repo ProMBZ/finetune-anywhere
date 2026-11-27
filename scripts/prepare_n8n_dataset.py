@@ -306,7 +306,8 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
         for i in range(train_per_code-len(examples)):
             generated+=1
             prepared_train.append(_make_variant(examples[i%len(examples)],generated,generated))
-    random.Random(42).shuffle(prepared_train)\n    prepared_valid=_normalise_ids(valid,"valid"); prepared_eval=_normalise_ids(evaluation,"eval")
+    random.Random(42).shuffle(prepared_train)
+    prepared_valid=_normalise_ids(valid,"valid"); prepared_eval=_normalise_ids(evaluation,"eval")
     splits={"train":prepared_train,"valid":prepared_valid,"eval":prepared_eval}
     seen_ids=set(); seen_prompts=set()
     for split,rows in splits.items():
