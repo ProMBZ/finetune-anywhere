@@ -333,7 +333,7 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
       "counts":{"train":len(prepared_train),"valid":len(prepared_valid),"eval":len(prepared_eval),"total":total},
       "categories":sorted(CODES_BY_CATEGORY),"diagnosis_code_taxonomy":"diagnosis-codes.json",
       "distribution":distribution,"code_distribution":code_distribution,\n      "label_normalization":{"corrections":dict(sorted(normalisation_report.items())),"scope":["train","supplemental","valid"],"heldout_eval_modified":False},
-      "supplemental_training":{"file":supplemental_path.name if supplemental else None,
+      "supplemental_training":{"files":[path.name for path in supplemental_files],
        "base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),
        "supplemental_cases_are_synthetic":True,"supplemental_cases_are_train_only":True},
       "augmentation":{"source_train_cases":len(train),"generated_train_variants":generated,"target_examples_per_diagnosis_code":train_per_code,
@@ -350,7 +350,7 @@ def prepare_dataset(source_dir: str|Path, output_dir: str|Path, train_per_code: 
     (out/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     (out/"DATASET_CARD.md").write_text(f"# Prepared dataset v0.6\n\n- Base source training cases: {len(base_train)}\n- Supplemental authored training cases: {len(supplemental)}\n- Training: {len(prepared_train)} ({train_per_code} per code)\n- Validation: {len(prepared_valid)} (unchanged)\n- Held-out evaluation: {len(prepared_eval)} (unchanged)\n- Generated training variants: {generated}\n\nTraining variants are semantic-preserving transformations, not newly observed incidents. The held-out set is not augmented; case IDs are opaque.\n",encoding="utf-8")
     if (source/"archive").exists(): shutil.copytree(source/"archive",out/"archive",dirs_exist_ok=True)
-    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"note":"Validation and evaluation were not augmented."}
+    return {"status":"prepared","version":manifest["version"],"counts":manifest["counts"],"base_source_train_cases":len(base_train),"supplemental_train_cases":len(supplemental),"train_per_diagnosis_code":train_per_code,"generated_training_variants":generated,"unique_case_ids":len(seen_ids),"unique_prompt_fingerprints":len(seen_prompts),"label_normalization":dict(sorted(normalisation_report.items())),"note":"Training/validation labels were audited; legacy held-out evaluation was untouched."}
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--source-dir",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--train-per-code",type=int,default=48)
