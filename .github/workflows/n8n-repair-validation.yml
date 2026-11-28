@@ -31,4 +31,5 @@ jobs:
             tests/test_validate_n8n_dataset.py \
             tests/test_n8n_docs_retriever.py \
             tests/test_prepare_n8n_dataset.py \
-            tests/test_n8n_workflow_notebook.py
+            tests/test_n8n_workflow_notebook.py \\
+            tests/test_n8n_kaggle_notebook.py
