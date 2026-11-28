@@ -59,3 +59,11 @@ Choose **GPU T4 x2** and turn **Internet On**. This port uses the same Qwen3-1.7
 
 See [the step-by-step n8n Kaggle guide](README.md#hackathon-notebook-n8n-workflow-repair-v07).
 
+## Hackathon notebook: n8n Workflow Repair v0.7
+
+**[Import the dedicated Kaggle notebook](https://www.kaggle.com/kernels/welcome?src=https://raw.githubusercontent.com/ProMBZ/finetune-anywhere/project-01-n8n-workflow-repair/paths/kaggle/n8n-workflow-repair.ipynb).**
+
+Choose **GPU T4 x2** and turn **Internet On**. This port uses the same Qwen3-1.7B 4-bit QLoRA recipe, v0.7 data preparation, documentation retrieval, held-out evaluation and scoring as the Colab notebook. It exposes one T4 to Python to preserve the original single-GPU effective batch semantics. It saves a new adapter and evidence under `/kaggle/working` and does not overwrite an existing model.
+
+See the [step-by-step n8n Kaggle guide](README.md#hackathon-notebook-n8n-workflow-repair-v07).
+
