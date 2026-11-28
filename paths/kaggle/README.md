@@ -50,3 +50,12 @@ Use the recipe's system instruction when testing the extraction task. See [local
 The last notebook section accepts `train.jsonl`, `valid.jsonl` and `eval.jsonl` in [chat format](../../guides/02-make-a-dataset.md). Turn on `USE_OWN_DATA`, attach your dataset through the Input panel and choose it, and run validation. Restart the session, rerun Install and Settings, apply the printed data path and `RECIPE = 'my-task'`, then load a fresh base and train again.
 
 [Troubleshooting](../../guides/faq.md) · [Share your model](../../guides/07-share-your-model.md)
+
+## Hackathon notebook: n8n Workflow Repair v0.7
+
+**[Import the dedicated Kaggle notebook](https://www.kaggle.com/kernels/welcome?src=https://raw.githubusercontent.com/ProMBZ/finetune-anywhere/project-01-n8n-workflow-repair/paths/kaggle/n8n-workflow-repair.ipynb).**
+
+Choose **GPU T4 x2** and turn **Internet On**. This port uses the same Qwen3-1.7B 4-bit QLoRA recipe, v0.7 data preparation, retrieval, held-out evaluation and scoring as the Colab notebook. It exposes one T4 to Python to preserve the original single-GPU effective batch semantics. It saves a new adapter and evidence under `/kaggle/working` and does not overwrite an existing model.
+
+See [the step-by-step n8n Kaggle guide](README.md#hackathon-notebook-n8n-workflow-repair-v07).
+
