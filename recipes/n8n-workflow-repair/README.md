@@ -64,3 +64,10 @@ Training uses TRL 0.22.2 conversational prompt/completion data with `completion_
 Select a T4 GPU when available and run from a **fresh runtime**, top to bottom. Step 8 prepares the v0.7 data, checks tokenizer lengths, validates the prepared recipe and runs the project tests before any GPU training. The notebook then evaluates the base model, trains the adapter, evaluates the original 192 held-out cases and the separate 48-case challenge set, and saves the adapter and full evidence. Review the validation curve and all category/code confusion before deciding whether the model is submission-ready.
 
 Keep both held-out evaluation sets untouched. Do not tune repeatedly against individual test misses.
+
+## Kaggle
+
+[Import the dedicated Kaggle v0.7 notebook](https://www.kaggle.com/kernels/welcome?src=https://raw.githubusercontent.com/ProMBZ/finetune-anywhere/project-01-n8n-workflow-repair/paths/kaggle/n8n-workflow-repair.ipynb). Select **GPU T4 x2** and turn **Internet On**. The port changes only runtime paths, storage and artifact downloads; it reads the same `config.yaml`, source data, model registry, documentation and evaluation code as Colab. Python uses one T4 (GPU 0) to preserve the original single-GPU batch semantics. It saves a new adapter and full evidence in a unique folder under `/kaggle/working/finetune-anywhere-runs/`.
+
+See the [Kaggle run guide](../../paths/kaggle/README.md#hackathon-notebook-n8n-workflow-repair-v07) for import, settings and download instructions. The run does not touch an existing adapter or Google Drive files.
+
